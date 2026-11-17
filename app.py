@@ -3,7 +3,6 @@ import requests
 import json
 import base64
 
-# Streamlit Page Config
 st.set_page_config(
     page_title="CBX API Master Commander",
     page_icon="⚡",
@@ -11,7 +10,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
 st.markdown("""
 <style>
     .main-header { font-size: 1.8rem; font-weight: 700; color: #1E293B; margin-bottom: 0.2rem; }
@@ -20,8 +18,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Default Token
-DEFAULT_TOKEN = "eyJraWQiOiJGenFEamZXNlRYaTUzNVN4QnFoMTIzIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1cm46YnJvYWRjb206c2Fhczpkb21haW46ZjZHOHI5eEhTVmlzd0dNSENkX2ZNUTpjbGllbnQ6TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzAiLCJ2ZXIiOjIsImlzcyI6Imh0dHBzOi8vYXBpLnNlY3VyaXR5LmNvbSIsInVyaSI6Ii9vYXV0aDIvY2xpZW50cy9PMklELld2bTFMOVRBUndPWldUekVCQmpXMHcuZjZHOHI5eEhTVmlzd0dNSENkX2ZNUS41a21lcXBxbDU0YWYzcnF2NmtrNGJnaDJjMCIsImNsaWVudF9pZCI6Ik8ySUQuV3ZtMUw5VEFSd09aV1R6RUJCalcwdy5mNkc4cjl4SFNWaXN3R01IQ2RfZk1RLjVrbWVxcHFsNTRhZjNycXY2a2s0YmdoMmMwIiwiZG9tYWluX2lkIjoiZjZHOHI5eEhTVmlzd0dNSENkX2ZNUSIsInNjb3BlIjoiZG9tYWluIG9hdXRoIiwidHR5IjoiYWNjZXNzIiwicHJpdnMiOiJlZHJfZ2V0X2ZpbGUgY2J4X2Rvd25sb2FkX2ZpbGUgd3NzX3ZpZXdfcG9saWN5X2xpc3RzIGFlcF9ydW5fcXVhcmFudGluZSBzZXNfdXBkYXRlX3NoYXJlZF9lbmRwb2ludCBzZXNfdmlld19zaGFyZWRfZW5kcG9pbnQgZWRyX2RlbGV0ZV9maWxlIGVkcl9kZWxldGVfZW5kcG9pbnRzZWFyY2ggY2JjX2xyX2V4ZWN1dGVfcHJvY2VzcyBjYnhfdmlld192dWxuZXJhYmlsaXR5X2RhdGEgY3BfbWFuYWdlX2VuZHBvaW50X3BvbGljeSBjYmNfdmlld19scSBjYmNfdmlld19kYXRhX2ZvcndhcmRlcnMgY2J4X3N1Ym1pdF9zYW5kYm94IGNiY192aWV3X25vdGlmaWNhdGlvbnMgY2J4X21hbmFnZV92dWxuZXJhYmlsaXR5X2RhdGEgY2JjX3ZpZXdfd2F0Y2hsaXN0cyBjYmNfdmlld19hbGVydHMgY2JjX3VzZV9sciBlZHJfZ2V0ZmlsZV9ub2NyZWQgYWVwX3J1bl9saXZldXBkYXRlIGFlcF9tYW5hZ2VfY29tbWFuZHMgY2JjX21uZ19hbGVydHNfbm90ZXNfdGFncyBjYnhfdmlld19kZXZpY2Vfc2VhcmNoIGNiY19tbmdfbm90aWZpY2F0aW9ucyBjYmNfcGVyZm9ybV9kZW9iZnVzY2F0aW9uIGNiY19yZXF1ZXN0X3VwZGF0ZWRfdnVsbl9kYXRhIGNiY19tbmdfd2F0Y2hsaXN0cyBzZXNfdmlld19hbGxfZmlsZXMgY3BfbWFuYWdlX2dsb2JhbF9wb2xpY3kgY2JjX2Nsb3NlX2FsZXJ0cyBjYmNfbW5nX2RhdGFfZm9yd2FyZGVycyB3c3NfbWFuYWdlX3BvbGljeV9saXN0cyBjYmNfbWFuYWdlX2FsZXJ0cyBzZXNfbWFuYWdlX3NoYXJlZF9lbmRwb2ludCBjYmNfbHJfdmlldyBlZHJfdHJpZ2dlcl9lbmRwb2ludHNlYXJjaCBzZXNfdmlld19yZXBvcnRzIHZpZXdfZXZlbnRzIGVkcl9yc2hlbGxfaW52ZXMgc2VzX3RocmVhdF9pbnRlbF9hcGlfYWNjZXNzIGNiY192aWV3X2V4cG9ydF92dWxuX2RhdGEgc2VzX21hbmFnZV9yZXBvcnRzIGNiY19jb25kdWN0X3Byb2Nlc3NfYW5hbHlzaXMgY3Bfdmlld19nbG9iYWxfcG9saWN5IGFlcF9yZW1vdGVfbG9nX2NvbGxlY3QgYWVwX3J1bl9yZWJvb3QgYWVwX3J1bl9zY2FuIHRkYWRfdHJpZ2dlcl9mb3JlbnNpY3MgY2JjX2xyX2R1bXBfbWVtb3J5IGNwX3ZpZXdfeGRyX3BvbGljeSBjYmNfZXhwb3J0X2V2ZW50X2RhdGEgY3BfbWFuYWdlX3hkcl9wb2xpY3kgY2JjX2NvbmR1Y3RfaW52ZXN0aWdhdGlvbiBlZHJfdmlld19pbnZlc3RpZ2F0aW9uIGNwX3ZpZXdfZW5kcG9pbnRfcG9saWN5IGVkcl9jYW5jZWxfZW5kcG9pbnRzZWFyY2ggY2J4X2RlbGV0ZV9maWxlIGFlcF92aWV3X2NvbW1hbmRzIGNieF9tYW5hZ2VfZGV2aWNlX3NlYXJjaCIsImV4cCI6MTc5NDg5NTE1NCwiY3VzdG9tZXJfaWQiOiJXdm0xTDlUQVJ3T1pXVHpFQkJqVzB3IiwiaWF0IjoxNzk0ODkxNTU0LCJqdGkiOiJuNkh1bUMwdFRFSy1EUHdBTThReTJnIn0.UK25LPk6Fj04SB8n30KRg9vXFa8CwoN-hb0PAw-cNvy_NKgJMwMCXWXMDG0b-9dSMcO6-fDAACjklRz_tgvcoWP0zFGrLYkIv_16WVlEuNTx9efq1yLqPeA7X83i5zJD0YJSkrn1CQjuT2QSmWHgYkwq_F8mgiUz21cUAPTHA8R3_jvWuKtZnyNBwHBvjwuRqVfgFfLSQfzxpXfAxBzdC3n8HE8JqnqwS8-4P5llulpa3NRoaRW04DItstYEcJ-Vq4pRySQEjY-pW4NriIzMzWoGabsJfFU65zrMDPk6OmpuK2cOizyJHe8QtHez3Zqb07kAjHOgDArk0-67i_UQLQ"
+DEFAULT_TOKEN = "TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzA6MWU5OWhvMGNnbDdiYzBia2xuaGViaTZuZGg4dmR1dmcyaTBy"
 
 def extract_jwt_claims(token_str):
     if not token_str:
@@ -37,15 +34,13 @@ def extract_jwt_claims(token_str):
             pass
     return None, None
 
-# --- SIDEBAR ---
 st.sidebar.title("⚡ CBX Control Panel")
 st.sidebar.markdown("---")
 
 api_token = st.sidebar.text_input(
     "OAuth Bearer / Basic Token",
     value=DEFAULT_TOKEN,
-    type="password",
-    help="認証トークンを入力してください。JWTの場合、customer_idとdomain_idが自動抽出されます。"
+    type="password"
 )
 
 server_url = st.sidebar.text_input(
@@ -67,13 +62,11 @@ if "exec_method" not in st.session_state:
 if "exec_endpoint" not in st.session_state:
     st.session_state["exec_endpoint"] = "/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary"
 if "exec_payload" not in st.session_state:
-    st.session_state["exec_payload"] = json.dumps({"customer_id": c_id or "", "domain_id": d_id or ""}, indent=2)
+    st.session_state["exec_payload"] = json.dumps({}, indent=2)
 
-# Header
 st.markdown('<div class="main-header">⚡ CBX API Master Commander</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント対応。テンプレートから実行ボックスへのデータ転送機能付き。</div>', unsafe_allow_html=True)
 
-# Category selection covering ALL 11 modules
 module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
@@ -93,7 +86,6 @@ module_choice = st.selectbox(
 
 st.markdown("---")
 
-# Comprehensive Endpoint & Form Generator
 with st.container():
     st.subheader(f"📝 テンプレート設定: {module_choice}")
     
@@ -230,17 +222,16 @@ with st.container():
             if "_search" in t_endpoint:
                 t_data = {"rows": 10, "start": 0}
 
-        # Auto inject customer_id & domain_id if POST/PUT/PATCH
-        if t_method in ["POST", "PUT", "PATCH"] and isinstance(t_data, dict):
-            if c_id and "customer_id" not in t_data: t_data["customer_id"] = c_id
-            if d_id and "domain_id" not in t_data: t_data["domain_id"] = d_id
+        # NOTE: Automatic customer_id and domain_id injection has been removed per request.
 
     with col_in2:
         st.markdown("**生成されるプレビュー (URL / データ):**")
-        preview_text = f"Endpoint: {t_endpoint}\nMethod: {t_method}\nData:\n{json.dumps(t_data, indent=2)}"
+        preview_text = f"Endpoint: {t_endpoint}
+Method: {t_method}
+Data:
+{json.dumps(t_data, indent=2)}"
         st.code(preview_text, language="json")
         
-        # 転送ボタンのクリック処理 (st.rerun() で確実に反映)
         if st.button("📥 実行ボックスにこの設定を転送する", use_container_width=True, type="primary"):
             st.session_state["exec_method"] = t_method
             st.session_state["exec_endpoint"] = t_endpoint
@@ -249,7 +240,6 @@ with st.container():
 
 st.markdown("---")
 
-# --- ALWAYS VISIBLE EXECUTION BOX (NO KEYS TO AVOID STATE CONFLICTS) ---
 st.markdown("## 🚀 共通実行ボックス (Execution Box)")
 st.markdown("下部のボックスでURLやリクエストデータを直接編集し、**cURL** や **Pythonコード** を確認しながら実行できます。")
 
@@ -283,7 +273,6 @@ with st.container():
         st.markdown("#### 📦 リクエストデータ (JSON Payload)")
         raw_data_input = st.text_area("JSON Raw Data", value=st.session_state["exec_payload"], height=160)
 
-    # Code Snippets generation tab
     st.markdown("#### 💻 リクエストコード生成 (cURL & Python)")
     snip_tab1, snip_tab2 = st.tabs(["cURL Command", "Python Code Snippet"])
     
@@ -293,15 +282,25 @@ with st.container():
             curl_parts.append(f"  --header '{hk}: {hv}'")
         if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
             curl_parts.append(f"  --data '{raw_data_input.strip()}'")
-        st.code(" \\\n".join(curl_parts), language="bash")
+        st.code(" \
+".join(curl_parts), language="bash")
 
     with snip_tab2:
-        py_code = f"import requests\nimport json\n\nurl = \"{full_url_preview}\"\nheaders = {json.dumps(headers_preview, indent=4)}\n"
+        py_code = f"import requests
+import json
+
+url = "{full_url_preview}"
+headers = {json.dumps(headers_preview, indent=4)}
+"
         if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
-            py_code += f"payload = {raw_data_input.strip()}\nresponse = requests.{method.lower()}(url, headers=headers, json=payload)\n"
+            py_code += f"payload = {raw_data_input.strip()}
+response = requests.{method.lower()}(url, headers=headers, json=payload)
+"
         else:
-            py_code += f"response = requests.{method.lower()}(url, headers=headers)\n"
-        py_code += "print(response.status_code)\nprint(response.json())"
+            py_code += f"response = requests.{method.lower()}(url, headers=headers)
+"
+        py_code += "print(response.status_code)
+print(response.json())"
         st.code(py_code, language="python")
 
     if st.button("⚡ 今すぐリクエストを実行する", use_container_width=True, type="primary"):
