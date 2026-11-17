@@ -79,673 +79,680 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                'permissions': ['Device and Device Group Management -> View'],
                'endpoints': [{'method': 'GET',
                               'path': '/agent-management/devices/v2/devices',
-                              'summary': 'Retrieve the list of devices.',
+                              'summary': 'デバイス一覧を取得します。',
                               'operation_id': 'listDevices',
                               'sku': '',
-                              'desc': 'Returns a paginated list of managed devices with optional filtering and sorting. Requires the Read Devices permission. '
-                                      'Callers without this permission will receive a 403 Forbidden response.',
+                              'desc': '管理対象デバイスの一覧をページ単位で返します。任意でフィルタリングおよび並べ替えが可能です。Read Devices '
+                                      '権限が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                               'path_params': [],
                               'query_params': [{'name': 'page',
                                                 'type': 'integer',
                                                 'required': False,
                                                 'default': '1',
-                                                'desc': 'The page number to retrieve (1-indexed). [NOTE] When this field is not present, the first page is '
-                                                        'returned.',
+                                                'desc': '取得するページ番号（1 始まり）。【注意】このフィールドが指定されていない場合は、最初のページが返されます。',
                                                 'sample': ''},
                                                {'name': 'page_size',
                                                 'type': 'integer',
                                                 'required': False,
                                                 'default': '100',
-                                                'desc': 'Number of devices per page. [NOTE] By default, 100 devices are returned. Maximum page size is 1000, '
-                                                        'or 500 if include_details=true is specified. Requests with page_size > 500 and include_details=true…',
+                                                'desc': '1 ページあたりのデバイス数。【注意】デフォルトでは 100 台のデバイスが返されます。最大ページサイズは 1000 '
+                                                        'で、include_details=true を指定した場合は 500 です。page_size > 500 かつ '
+                                                        'include_details=true のリクエストは…',
                                                 'sample': ''},
                                                {'name': 'include_details',
                                                 'type': 'boolean',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Flag to include product and feature details in response. Possible values: true/false. [NOTE] When '
-                                                        'this flag is true, the maximum number of records supported per request is 500.',
+                                                'desc': 'レスポンスに製品および機能の詳細を含めるかどうかを示すフラグ。指定可能な値: true/false。【注意】このフラグが '
+                                                        'true の場合、1 リクエストあたりでサポートされる最大レコード数は 500 です。',
                                                 'sample': ''},
                                                {'name': 'include_path',
                                                 'type': 'boolean',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Flag to include device group full path in response. Possible values: true/false.',
+                                                'desc': 'レスポンスにデバイスグループのフルパスを含めるかどうかを示すフラグ。指定可能な値: true/false。',
                                                 'sample': ''},
                                                {'name': 'order_by',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Name of the field used to sort devices in the response, optionally followed by a space and "asc" or '
-                                                        '"desc" to set sort direction; if omitted, sort order defaults to ascending. Only one field can be sp…',
+                                                'desc': 'レスポンス内のデバイスの並べ替えに使用するフィールド名。並べ替え方向を指定する場合は、続けてスペースと "asc" または '
+                                                        '"desc" を付加します。省略した場合、並べ替え順序はデフォルトで昇順になります。指定できるフィールドは 1 つ…',
                                                 'sample': ''},
                                                {'name': 'antimalware_content_version',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Version of antimalware content installed on the device. Multiple values supplied for this parameter '
-                                                        'are combined with OR — a device matches if it satisfies any of the provided values. Each value perfo…',
+                                                'desc': 'デバイスにインストールされているマルウェア対策コンテンツのバージョン。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は…',
                                                 'sample': ''},
                                                {'name': 'capabilities_enabled',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Capabilities enabled on this device, filtered by internal capability constant (marketing name shown '
-                                                        'for reference, subject to change): ENDPOINT_PROTECTION (Endpoint Security), WEB_SECURITY (Web Securi…',
+                                                'desc': 'このデバイスで有効になっている機能。内部の機能定数でフィルタリングします（参考として表示しているマーケティング名は変更される可能性があります）: '
+                                                        'ENDPOINT_PROTECTION (Endpoint Security)、WEB_SECURITY (Web '
+                                                        'Securi…',
                                                 'sample': ''},
                                                {'name': 'cloud_platform',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Cloud platform. Supported values: AWS, GCP, AZURE, NONE. Multiple values supplied for this parameter '
-                                                        'are combined with OR — a device matches if it satisfies any of the provided values. Each value perf…',
+                                                'desc': 'クラウドプラットフォーム。サポートされる値: '
+                                                        'AWS、GCP、AZURE、NONE。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は…',
                                                 'sample': ''},
                                                {'name': 'connection_status',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Connection status of the agent installed on the device. Online means the device has communicated with '
-                                                        'the backend within the last 48 hours; otherwise the device is Offline. Note: the connection_status…',
+                                                'desc': 'デバイスにインストールされているエージェントの接続状態。Online は、デバイスが過去 48 '
+                                                        '時間以内にバックエンドと通信したことを意味します。それ以外の場合、デバイスは Offline となります。注: '
+                                                        'connection_status…',
                                                 'sample': ''},
                                                {'name': 'data_security_version',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Version of Data Security installed on the device. Multiple values supplied for this parameter are '
-                                                        'combined with OR — a device matches if it satisfies any of the provided values. Each value performs '
-                                                        'a…',
+                                                'desc': 'デバイスにインストールされている Data Security のバージョン。このパラメーターに複数の値を指定した場合は '
+                                                        'OR で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は…',
                                                 'sample': ''},
                                                {'name': 'device_group',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'id of the parent device group. Corresponds to the parent_device_group_id field in the response. '
-                                                        'Multiple values supplied for this parameter are combined with OR — a device matches if it satisfies '
-                                                        'any…',
+                                                'desc': '親デバイスグループの id。レスポンスの parent_device_group_id '
+                                                        'フィールドに対応します。このパラメーターに複数の値を指定した場合は OR で結合され、指定した値のいずれかを…',
                                                 'sample': ''},
                                                {'name': 'device_id',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Unique device identifier. [NOTE] If order_by is not specified, devices in the response are sorted by '
-                                                        'device_id.',
+                                                'desc': 'デバイスの一意識別子。【注意】order_by が指定されていない場合、レスポンス内のデバイスは device_id '
+                                                        'で並べ替えられます。',
                                                 'sample': ''},
                                                {'name': 'device_name',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'name of the device. Multiple values supplied for this parameter are combined with OR — a device '
-                                                        'matches if it satisfies any of the provided values. Each value performs a partial/substring match '
-                                                        'agains…',
+                                                'desc': 'デバイスの名前。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値はフィールドに対して部分一致（部分文字列一致）を行い…',
                                                 'sample': ''},
                                                {'name': 'device_os',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'OS name of the device. Corresponds to the os.device_os field in the response. Multiple values '
-                                                        'supplied for this parameter are combined with OR — a device matches if it satisfies any of the '
-                                                        'provided va…',
+                                                'desc': 'デバイスの OS 名。レスポンスの os.device_os '
+                                                        'フィールドに対応します。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが…',
                                                 'sample': ''},
                                                {'name': 'device_type',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': "OS type of the device, matched internally against the device's os.type value by suffix — WORKSTATION "
-                                                        'matches any os.type ending in _WORKSTATION, SERVER matches any os.type ending in _SERVER. There is…',
+                                                'desc': 'デバイスの OS タイプ。内部的にはデバイスの os.type '
+                                                        '値に対してサフィックスで照合されます。WORKSTATION は _WORKSTATION で終わる任意の os.type '
+                                                        'に、SERVER は _SERVER で終わる任意の os.type に一致します。…',
                                                 'sample': ''},
                                                {'name': 'disabled_expiration_time',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Returns devices whose disabled_expiration_time is on or after this value (i.e. devices whose '
-                                                        'troubleshooting period expires at or later than the given time). Time when the troubleshooting period '
-                                                        'will…',
+                                                'desc': 'disabled_expiration_time '
+                                                        'がこの値以降であるデバイス（つまり、トラブルシューティング期間の終了が指定時刻以降であるデバイス）を返します。トラブルシューティング期間が終了する時刻…',
                                                 'sample': ''},
                                                {'name': 'domain',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'The domain to which this device is connected. Multiple values supplied for this parameter are '
-                                                        'combined with OR — a device matches if it satisfies any of the provided values. Each value performs a '
-                                                        'part…',
+                                                'desc': 'このデバイスが接続しているドメイン。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は部分…',
                                                 'sample': ''},
                                                {'name': 'endpoint_security_version',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Version of Endpoint Protection installed on the device. Multiple values supplied for this parameter '
-                                                        'are combined with OR — a device matches if it satisfies any of the provided values. Each value perfo…',
+                                                'desc': 'デバイスにインストールされている Endpoint Protection '
+                                                        'のバージョン。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は…',
                                                 'sample': ''},
                                                {'name': 'enrollment_date',
                                                 'type': 'integer',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Devices enrolled within the specified number of days up to now will be returned. Note: although this '
-                                                        'field is named enrollment_date and represents a date in device responses, this query parameter expe…',
+                                                'desc': '現在までの指定日数以内に登録されたデバイスが返されます。注: このフィールドは enrollment_date '
+                                                        'という名前で、デバイスのレスポンスでは日付を表しますが、このクエリーパラメーターが想定するのは…',
                                                 'sample': ''},
                                                {'name': 'esa_version',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Version of Endpoint Security Agent installed on the device. Multiple values supplied for this '
-                                                        'parameter are combined with OR — a device matches if it satisfies any of the provided values. Each '
-                                                        'value p…',
+                                                'desc': 'デバイスにインストールされている Endpoint Security Agent '
+                                                        'のバージョン。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は…',
                                                 'sample': ''},
                                                {'name': 'form_factor',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Device form factor. Note: the form_factor field in the response returns this same value in Title Case '
-                                                        '(Physical/Virtual), not the PHYSICAL/VIRTUAL casing used here.',
+                                                'desc': 'デバイスのフォームファクター。注: レスポンスの form_factor フィールドは、ここで使用する '
+                                                        'PHYSICAL/VIRTUAL '
+                                                        'の大文字表記ではなく、同じ値を先頭のみ大文字（Physical/Virtual）で返します。',
                                                 'sample': ''},
                                                {'name': 'host',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Device host name. Multiple values supplied for this parameter are combined with OR — a device matches '
-                                                        'if it satisfies any of the provided values. Each value performs a partial/substring match against…',
+                                                'desc': 'デバイスのホスト名。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値はフィールドに対して部分一致（部分文字列一致）を行い…',
                                                 'sample': ''},
                                                {'name': 'instance_id',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Device instance ID. Corresponds to the instance_id field (and the identical '
-                                                        'device_identifiers.instance_id) in the response. Multiple values supplied for this parameter are '
-                                                        'combined with OR — a device…',
+                                                'desc': 'デバイスのインスタンス ID。レスポンスの instance_id フィールド（および同一の '
+                                                        'device_identifiers.instance_id）に対応します。このパラメーターに複数の値を指定した場合は '
+                                                        'OR で結合され、デバイスは…',
                                                 'sample': ''},
                                                {'name': 'ipv4_address',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'IPv4 address of a device. Multiple values supplied for this parameter are combined with OR — a device '
-                                                        'matches if it satisfies any of the provided values. Each value performs a partial/substring match…',
+                                                'desc': 'デバイスの IPv4 アドレス。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は部分一致（部分文字列一致）を行い…',
                                                 'sample': ''},
                                                {'name': 'last_updated',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Returns devices whose last_updated timestamp is on or after this value (i.e. devices updated at or '
-                                                        'later than the given time). Corresponds to products[0].last_updated in the response.',
+                                                'desc': 'last_updated '
+                                                        'タイムスタンプがこの値以降であるデバイス（つまり、指定時刻以降に更新されたデバイス）を返します。レスポンスの '
+                                                        'products[0].last_updated に対応します。',
                                                 'sample': ''},
                                                {'name': 'mac_address',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'MAC address of a device. Corresponds to the adapters[].addr field in the response. Multiple values '
-                                                        'supplied for this parameter are combined with OR — a device matches if it satisfies any of the '
-                                                        'provid…',
+                                                'desc': 'デバイスの MAC アドレス。レスポンスの adapters[].addr '
+                                                        'フィールドに対応します。このパラメーターに複数の値を指定した場合は OR で結合され、指定した値のいずれかを満たす…',
                                                 'sample': ''},
                                                {'name': 'mdm_id',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Device MDM ID. Note: there is no corresponding field in the device response schema to read this value '
-                                                        'back — filtering is supported, but the current value cannot be inspected on a returned device reco…',
+                                                'desc': 'デバイスの MDM ID。注: '
+                                                        'デバイスのレスポンススキーマにはこの値を読み戻すための対応フィールドがありません。フィルタリングはサポートされていますが、返されたデバイスレコード上で現在の値を確認することはできま…',
                                                 'sample': ''},
                                                {'name': 'os_version',
                                                 'type': 'string',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'OS version of the device. Corresponds to the os.os_version field in the response. Each value performs '
-                                                        'a partial/substring match against the field, not an exact match, e.g. "10.0" matches "10.0.19044".',
+                                                'desc': 'デバイスの OS バージョン。レスポンスの os.os_version '
+                                                        'フィールドに対応します。各値は完全一致ではなく、フィールドに対する部分一致（部分文字列一致）を行います。例: "10.0" '
+                                                        'は "10.0.19044" に一致します。',
                                                 'sample': ''},
                                                {'name': 'permission',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Cloud SWG connectivity state. Supported values: ALLOWED (connectivity permitted); BLOCKED '
-                                                        '(connectivity completely blocked, e.g. by policy); DISABLED (connectivity temporarily disabled until '
-                                                        'an admin…',
+                                                'desc': 'Cloud SWG の接続状態。サポートされる値: '
+                                                        'ALLOWED（接続を許可）、BLOCKED（ポリシーなどにより接続を完全にブロック）、DISABLED（管理者が…まで接続を一時的に無効化）…',
                                                 'sample': ''},
                                                {'name': 'security_status',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Device security status. The meaning of each value (including NOT_COMPUTED, UNENROLLED, and UNKNOWN) '
-                                                        'is documented at https://techdocs.broadcom.com/us/en/symantec-security-software/symantec-cbx/cbx/ind…',
+                                                'desc': 'デバイスのセキュリティステータス。各値（NOT_COMPUTED、UNENROLLED、UNKNOWN '
+                                                        'を含む）の意味は次のページに記載されています: '
+                                                        'https://techdocs.broadcom.com/us/en/symantec-security-software/symantec-cbx/cbx/ind…',
                                                 'sample': ''},
                                                {'name': 'status_reason',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Device status reason codes reported by the endpoint agent. Values are numeric strings (e.g. "132", '
-                                                        '"613") and are not a fixed enum — the set of codes depends on the agent version and installed '
-                                                        'product…',
+                                                'desc': 'エンドポイントエージェントが報告するデバイスステータスの理由コード。値は数値文字列（例: '
+                                                        '"132"、"613"）で、固定の列挙型ではありません。コードのセットはエージェントのバージョンおよびインストールされている製品によって異なり…',
                                                 'sample': ''},
                                                {'name': 'user',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Last logged-on user name. Corresponds to the os.user field in the response. Multiple values supplied '
-                                                        'for this parameter are combined with OR — a device matches if it satisfies any of the provided valu…',
+                                                'desc': '最後にログオンしたユーザー名。レスポンスの os.user '
+                                                        'フィールドに対応します。このパラメーターに複数の値を指定した場合は OR で結合され、指定した値のいずれかを…',
                                                 'sample': ''},
                                                {'name': 'web_security_version',
                                                 'type': 'array',
                                                 'required': False,
                                                 'default': '',
-                                                'desc': 'Version of Web Security installed on the device. Multiple values supplied for this parameter are '
-                                                        'combined with OR — a device matches if it satisfies any of the provided values. Each value performs a '
-                                                        'p…',
+                                                'desc': 'デバイスにインストールされている Web Security のバージョン。このパラメーターに複数の値を指定した場合は OR '
+                                                        'で結合され、指定した値のいずれかを満たすデバイスが一致します。各値は部分…',
                                                 'sample': ''}],
                               'body': None,
                               'body_schema': []},
                              {'method': 'DELETE',
                               'path': '/agent-management/devices/v2/devices',
-                              'summary': 'Bulk delete managed devices',
+                              'summary': '管理対象デバイスの一括削除',
                               'operation_id': 'deleteDevices',
                               'sku': '',
-                              'desc': 'Bulk delete managed devices by their identifiers. Supply device_id values (returned by GET /devices) in the device_uids '
-                                      'request field. Returns per-device results; partial success is possible. Requires the Manage Devices permission. Callers '
-                                      'without this permission will receive a 403 Forbidden response.',
+                              'desc': '識別子を指定して管理対象デバイスを一括削除します。device_uids リクエストフィールドに device_id の値（GET /devices '
+                                      'で返されるもの）を指定します。デバイスごとの結果が返され、一部のみ成功する場合があります。Manage Devices '
+                                      '権限が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                               'path_params': [],
                               'query_params': [],
                               'body': {'device_uids': ['J1GpYTXlQmaD9c70WQIURA', 'doKfbw70SaKXvaR2PIxfLA']},
-                              'body_schema': ['`device_uids` `array[string]` *(required)* — List of unique device identifiers to delete. Each value '
-                                              'corresponds to the device_id field returned by GET /devices and GET /devices/{device_id}.']},
+                              'body_schema': ['`device_uids` `array[string]` *(必須)* — 削除するデバイスの一意識別子のリスト。各値は GET '
+                                              '/devices および GET /devices/{device_id} で返される device_id フィールドに対応します。']},
                              {'method': 'GET',
                               'path': '/agent-management/devices/v2/devices/{device_id}',
-                              'summary': 'Retrieve device details.',
+                              'summary': 'デバイスの詳細を取得します。',
                               'operation_id': 'getDeviceDetails',
                               'sku': '',
-                              'desc': 'Returns full details for the specified device, including OS, hardware, network adapters, and installed security '
-                                      'products. Requires the Read Devices permission. Callers without this permission will receive a 403 Forbidden response.',
+                              'desc': '指定したデバイスの OS、ハードウェア、ネットワークアダプター、インストール済みセキュリティ製品を含む完全な詳細を返します。Read Devices '
+                                      '権限が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                               'path_params': [{'name': 'device_id',
                                                'required': True,
-                                               'desc': 'Defines which device to retrieve device details from. Corresponds to the device_id field returned by '
-                                                       'GET /devices or a prior GET /devices/{device_id} call.',
+                                               'desc': '詳細を取得するデバイスを指定します。GET /devices または事前の GET /devices/{device_id} '
+                                                       '呼び出しで返される device_id フィールドに対応します。',
                                                'sample': 'ZROiMffzSAGb_2WT1c-75Q'}],
                               'query_params': [],
                               'body': None,
                               'body_schema': []},
                              {'method': 'GET',
                               'path': '/agent-management/devices/v2/devices/enums',
-                              'summary': 'API endpoints for retrieving CBX enumeration details and device specific details.',
+                              'summary': 'CBX の列挙値の詳細およびデバイス固有の詳細を取得するための API エンドポイント。',
                               'operation_id': 'getDeviceEnums',
                               'sku': '',
-                              'desc': 'Returns enumeration details for CBX device fields, including feature names, security status values, and reason codes. '
-                                      'Requires the Read Devices permission. Callers without this permission will receive a 403 Forbidden response.',
+                              'desc': '機能名、セキュリティステータス値、理由コードなど、CBX デバイスフィールドの列挙値の詳細を返します。Read Devices '
+                                      '権限が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                               'path_params': [],
                               'query_params': [],
                               'body': None,
                               'body_schema': []}]},
  '🗂️ Device Groups': {'doc': 'cbx_device_groups.md',
-                      'permissions': ['Device and Device Group Management -> View', 'Device and Device Group Management -> Delete'],
+                      'permissions': ['Device and Device Group Management -> View',
+                                      'Device and Device Group Management -> Delete'],
                       'endpoints': [{'method': 'GET',
                                      'path': '/agent-management/device-groups/v2/groups',
-                                     'summary': 'Retrieve a list of your device groups.',
+                                     'summary': 'デバイスグループの一覧を取得します。',
                                      'operation_id': 'listDeviceGroups',
                                      'sku': '',
-                                     'desc': 'Returns a paginated list of all device groups. Requires the Read Device Groups permission (Agent Management > '
-                                             'Device and Device Group Management > Read, as labelled on the API Credentials page). Callers without this '
-                                             'permission will receive a 403 Forbidden response.',
+                                     'desc': 'すべてのデバイスグループの一覧をページ単位で返します。Read Device Groups 権限（API Credentials '
+                                             'ページ上の表記では Agent Management > Device and Device Group Management > '
+                                             'Read）が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [],
                                      'query_params': [{'name': 'page',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '1',
-                                                       'desc': '1-based page number.',
+                                                       'desc': '1 始まりのページ番号。',
                                                        'sample': ''},
                                                       {'name': 'page_size',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '1000',
-                                                       'desc': 'The number of records per page. The maximum number of records supported per request is 1000.',
+                                                       'desc': '1 ページあたりのレコード数。1 リクエストあたりでサポートされる最大レコード数は 1000 です。',
                                                        'sample': ''},
                                                       {'name': 'root_only',
                                                        'type': 'boolean',
                                                        'required': False,
                                                        'default': 'false',
-                                                       'desc': 'Filter to return only root device groups.',
+                                                       'desc': 'ルートデバイスグループのみを返すためのフィルター。',
                                                        'sample': ''},
                                                       {'name': 'order_by',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Sort order for the returned device groups. Only the name field is supported, in either '
-                                                               'ascending ("name") or descending ("name desc") direction; sorting is case-insensitive.',
+                                                       'desc': '返されるデバイスグループの並べ替え順序。サポートされるのは name '
+                                                               'フィールドのみで、昇順（"name"）または降順（"name '
+                                                               'desc"）を指定できます。並べ替えでは大文字と小文字は区別されません。',
                                                        'sample': ''},
                                                       {'name': 'name',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Filter groups by device group name (partial match).',
+                                                       'desc': 'デバイスグループ名でグループをフィルタリングします（部分一致）。',
                                                        'sample': ''}],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'POST',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}',
-                                     'summary': 'Create a child device group.',
+                                     'summary': '子デバイスグループを作成します。',
                                      'operation_id': 'createDeviceGroup',
                                      'sku': '',
-                                     'desc': 'Creates a new child device group under the specified parent group. Requires the Manage Device Groups permission '
-                                             '(Agent Management > Device and Device Group Management > Manage, as labelled on the API Credentials page). '
-                                             'Callers without this permission will receive a 403 Forbidden response.',
+                                     'desc': '指定した親グループの下に新しい子デバイスグループを作成します。Manage Device Groups 権限（API Credentials '
+                                             'ページ上の表記では Agent Management > Device and Device Group Management > '
+                                             'Manage）が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'ID of parent device group.',
+                                                      'desc': '親デバイスグループの ID。',
                                                       'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [],
                                      'body': {'name': 'Linux Servers - US East',
-                                              'description': 'Group for all Linux servers located in the US East data center'},
-                                     'body_schema': ['`name` `string` *(required)* — The name of the new device group.',
-                                                     '`description` `string` — The description of the device group']},
+                                              'description': 'Group for all Linux servers located in the US East data '
+                                                             'center'},
+                                     'body_schema': ['`name` `string` *(必須)* — 新しいデバイスグループの名前。',
+                                                     '`description` `string` — デバイスグループの説明']},
                                     {'method': 'GET',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}',
-                                     'summary': 'Retrieve a device group.',
+                                     'summary': 'デバイスグループを取得します。',
                                      'operation_id': 'getDeviceGroup',
                                      'sku': '',
-                                     'desc': 'Returns the specified device group by ID. Requires the Read Device Groups permission (Agent Management > Device '
-                                             'and Device Group Management > Read, as labelled on the API Credentials page). Callers without this permission '
-                                             'will receive a 403 Forbidden response.',
-                                     'path_params': [{'name': 'group_id', 'required': True, 'desc': 'ID of device group.', 'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
+                                     'desc': '指定した ID のデバイスグループを返します。Read Device Groups 権限（API Credentials ページ上の表記では '
+                                             'Agent Management > Device and Device Group Management > '
+                                             'Read）が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
+                                     'path_params': [{'name': 'group_id',
+                                                      'required': True,
+                                                      'desc': 'デバイスグループの ID。',
+                                                      'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'PUT',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}',
-                                     'summary': 'Update a device group.',
+                                     'summary': 'デバイスグループを更新します。',
                                      'operation_id': 'updateDeviceGroup',
                                      'sku': '',
-                                     'desc': 'Updates the name or description of the specified device group. Fields omitted from the request body are left '
-                                             'unchanged; only the fields provided are updated. Requires the Manage Device Groups permission (Agent Management '
-                                             '> Device and Device Group Management > Manage, as labelled on the API Credentials page). Callers without this '
-                                             'permission will receive a 403 Forbidden response.',
+                                     'desc': '指定したデバイスグループの名前または説明を更新します。リクエストボディで省略したフィールドは変更されず、指定したフィールドのみが更新されます。Manage '
+                                             'Device Groups 権限（API Credentials ページ上の表記では Agent Management > Device and '
+                                             'Device Group Management > Manage）が必要です。この権限を持たない呼び出し元には 403 Forbidden '
+                                             'レスポンスが返されます。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'ID of the device group to update.',
+                                                      'desc': '更新するデバイスグループの ID。',
                                                       'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [],
                                      'body': {'name': 'Linux Servers - US West',
-                                              'description': 'Group for all Linux servers located in the US West data center'},
-                                     'body_schema': ['`name` `string` — The new name to assign to the device group',
-                                                     '`description` `string` — The new description to assign to the device group']},
+                                              'description': 'Group for all Linux servers located in the US West data '
+                                                             'center'},
+                                     'body_schema': ['`name` `string` — デバイスグループに割り当てる新しい名前',
+                                                     '`description` `string` — デバイスグループに割り当てる新しい説明']},
                                     {'method': 'DELETE',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}',
-                                     'summary': 'Delete a device group.',
+                                     'summary': 'デバイスグループを削除します。',
                                      'operation_id': 'deleteDeviceGroup',
                                      'sku': '',
-                                     'desc': 'Deletes the specified device group. Only empty groups (with no associated devices) can be deleted. If the group '
-                                             'contains devices, remove or move them first. When recursive is true, the group and all nested child groups are '
-                                             'deleted; all child groups must also be empty. Requires the Manage Device Groups permission (Agent Management > '
-                                             'Device and Device Group Management > Manage, as labelled on the API Credentials page). Callers without this '
-                                             'permission will receive a 403 Forbidden response.',
+                                     'desc': '指定したデバイスグループを削除します。削除できるのは空のグループ（関連付けられたデバイスがないグループ）のみです。グループにデバイスが含まれている場合は、先にそれらを削除または移動してください。recursive '
+                                             'が true の場合、グループとネストされたすべての子グループが削除されます。この場合、すべての子グループも空である必要があります。Manage '
+                                             'Device Groups 権限（API Credentials ページ上の表記では Agent Management > Device and '
+                                             'Device Group Management > Manage）が必要です。この権限を持たない呼び出し元には 403 Forbidden '
+                                             'レスポンスが返されます。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'ID of device group to be deleted.',
+                                                      'desc': '削除するデバイスグループの ID。',
                                                       'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [{'name': 'recursive',
                                                        'type': 'boolean',
                                                        'required': False,
                                                        'default': 'false',
-                                                       'desc': 'If true, delete the group and all nested child groups; all child groups must also be empty (no '
-                                                               'associated devices). If false, only the specified group is deleted and it must itself be '
-                                                               'empty.',
+                                                       'desc': 'true '
+                                                               'の場合、グループとネストされたすべての子グループを削除します。すべての子グループも空（関連付けられたデバイスがない状態）である必要があります。false '
+                                                               'の場合、指定したグループのみが削除され、そのグループ自体が空である必要があります。',
                                                        'sample': ''}],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'GET',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}/devices',
-                                     'summary': 'Retrieve a list of devices that are members of a device group.',
+                                     'summary': 'デバイスグループのメンバーであるデバイスの一覧を取得します。',
                                      'operation_id': 'listGroupDevices',
                                      'sku': '',
-                                     'desc': 'Returns a paginated list of devices belonging to the specified device group. Unsupported query parameters or '
-                                             'unsupported parameter values will be ignored. Requires the Read Device Groups permission (Agent Management > '
-                                             'Device and Device Group Management > Read, as labelled on the API Credentials page). Callers without this '
-                                             'permission will receive a 403 Forbidden response. Each entry is a summary only (device_id and device_name); use '
-                                             'GET /agent-management/devices to retrieve full device detail.',
+                                     'desc': '指定したデバイスグループに属するデバイスの一覧をページ単位で返します。サポートされていないクエリーパラメーターやパラメーター値は無視されます。Read '
+                                             'Device Groups 権限（API Credentials ページ上の表記では Agent Management > Device and '
+                                             'Device Group Management > Read）が必要です。この権限を持たない呼び出し元には 403 Forbidden '
+                                             'レスポンスが返されます。各エントリは概要（device_id と device_name）のみです。デバイスの完全な詳細を取得するには GET '
+                                             '/agent-management/devices を使用してください。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'ID of the device group for which to retrieve devices.',
+                                                      'desc': 'デバイスを取得する対象のデバイスグループの ID。',
                                                       'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [{'name': 'page',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '1',
-                                                       'desc': '1-based page number for device results.',
+                                                       'desc': 'デバイス結果の 1 始まりのページ番号。',
                                                        'sample': ''},
                                                       {'name': 'page_size',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '1000',
-                                                       'desc': 'Number of device records per page. The maximum number of records supported per request is '
-                                                               '1000.',
+                                                       'desc': '1 ページあたりのデバイスレコード数。1 リクエストあたりでサポートされる最大レコード数は 1000 です。',
                                                        'sample': ''},
                                                       {'name': 'device_id',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Unique device identifier.',
+                                                       'desc': 'デバイスの一意識別子。',
                                                        'sample': ''},
                                                       {'name': 'antimalware_content_version',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Version of antimalware content installed on the device.',
+                                                       'desc': 'デバイスにインストールされているマルウェア対策コンテンツのバージョン。',
                                                        'sample': ''},
                                                       {'name': 'endpoint_security_version',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Version of Endpoint Security installed on the device.',
+                                                       'desc': 'デバイスにインストールされている Endpoint Security のバージョン。',
                                                        'sample': ''},
                                                       {'name': 'web_security_version',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Version of Web Security installed on the device.',
+                                                       'desc': 'デバイスにインストールされている Web Security のバージョン。',
                                                        'sample': ''},
                                                       {'name': 'data_security_version',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Version of Data Security installed on the device.',
+                                                       'desc': 'デバイスにインストールされている Data Security のバージョン。',
                                                        'sample': ''},
                                                       {'name': 'esa_version',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Version of Endpoint Security Agent installed on the device.',
+                                                       'desc': 'デバイスにインストールされている Endpoint Security Agent のバージョン。',
                                                        'sample': ''},
                                                       {'name': 'connection_status',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Connection status of the agent installed on the device. Online means the device has '
-                                                               'communicated with the backend within the last 48 hours; otherwise the device is Offline.',
+                                                       'desc': 'デバイスにインストールされているエージェントの接続状態。Online は、デバイスが過去 48 '
+                                                               '時間以内にバックエンドと通信したことを意味します。それ以外の場合、デバイスは Offline となります。',
                                                        'sample': ''},
                                                       {'name': 'security_status',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Device security status. The meaning of each value (including NOT_COMPUTED, UNENROLLED, and '
-                                                               'UNKNOWN) is documented at '
+                                                       'desc': 'デバイスのセキュリティステータス。各値（NOT_COMPUTED、UNENROLLED、UNKNOWN '
+                                                               'を含む）の意味は次のページに記載されています: '
                                                                'https://techdocs.broadcom.com/us/en/symantec-security-software/symantec-cbx/cbx/ind…',
                                                        'sample': ''},
                                                       {'name': 'device_os',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'OS name of the device.',
+                                                       'desc': 'デバイスの OS 名。',
                                                        'sample': ''},
                                                       {'name': 'os_version',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'OS version of the device (partial/prefix match), e.g. "10.0" matches "10.0.19044".',
+                                                       'desc': 'デバイスの OS バージョン（部分一致／前方一致）。例: "10.0" は "10.0.19044" '
+                                                               'に一致します。',
                                                        'sample': ''},
                                                       {'name': 'device_type',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'OS type of the device. Enum values: WORKSTATION = User workstation; SERVER = Server '
-                                                               'infrastructure.',
+                                                       'desc': 'デバイスの OS タイプ。列挙値: WORKSTATION = ユーザーワークステーション、SERVER = '
+                                                               'サーバーインフラストラクチャ。',
                                                        'sample': ''},
                                                       {'name': 'form_factor',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Device form factor.',
+                                                       'desc': 'デバイスのフォームファクター。',
                                                        'sample': ''},
                                                       {'name': 'device_name',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Name of the device.',
+                                                       'desc': 'デバイスの名前。',
                                                        'sample': ''},
                                                       {'name': 'status_reason',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Device status reason codes reported by the endpoint agent. Values are numeric strings (e.g. '
-                                                               '"132", "613") and are not a fixed enum — the set of codes depends on the agent version and '
-                                                               'installed product…',
+                                                       'desc': 'エンドポイントエージェントが報告するデバイスステータスの理由コード。値は数値文字列（例: '
+                                                               '"132"、"613"）で、固定の列挙型ではありません。コードのセットはエージェントのバージョンおよびインストールされている製品によって異なり…',
                                                        'sample': ''},
                                                       {'name': 'ipv4_address',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'IPv4 address of a device.',
+                                                       'desc': 'デバイスの IPv4 アドレス。',
                                                        'sample': ''},
                                                       {'name': 'mac_address',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'MAC address of a device.',
+                                                       'desc': 'デバイスの MAC アドレス。',
                                                        'sample': ''},
                                                       {'name': 'capabilities_enabled',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Capabilities enabled on this device. Supported values: ENDPOINT_PROTECTION, WEB_SECURITY, '
-                                                               'DATA_SECURITY.',
+                                                       'desc': 'このデバイスで有効になっている機能。サポートされる値: '
+                                                               'ENDPOINT_PROTECTION、WEB_SECURITY、DATA_SECURITY。',
                                                        'sample': ''},
                                                       {'name': 'cloud_platform',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Cloud platform. Supported values: AWS, GCP, AZURE, NONE.',
+                                                       'desc': 'クラウドプラットフォーム。サポートされる値: AWS、GCP、AZURE、NONE。',
                                                        'sample': ''},
                                                       {'name': 'enrollment_date',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Devices enrolled within the specified number of days up to now will be returned. Note: '
-                                                               'although this field is named enrollment_date and represents a date in device responses, this '
-                                                               'query parameter expe…',
+                                                       'desc': '現在までの指定日数以内に登録されたデバイスが返されます。注: このフィールドは '
+                                                               'enrollment_date '
+                                                               'という名前で、デバイスのレスポンスでは日付を表しますが、このクエリーパラメーターが想定するのは…',
                                                        'sample': ''},
                                                       {'name': 'permission',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Cloud SWG connectivity state. Supported values: ALLOWED, BLOCKED, DISABLED.',
+                                                       'desc': 'Cloud SWG の接続状態。サポートされる値: ALLOWED、BLOCKED、DISABLED。',
                                                        'sample': ''},
                                                       {'name': 'instance_id',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Device instance ID.',
+                                                       'desc': 'デバイスのインスタンス ID。',
                                                        'sample': ''},
                                                       {'name': 'domain',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'The domain to which this device is connected.',
+                                                       'desc': 'このデバイスが接続しているドメイン。',
                                                        'sample': ''},
                                                       {'name': 'host',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Device host name.',
+                                                       'desc': 'デバイスのホスト名。',
                                                        'sample': ''},
                                                       {'name': 'user',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Last logged-on user name.',
+                                                       'desc': '最後にログオンしたユーザー名。',
                                                        'sample': ''},
                                                       {'name': 'mdm_id',
                                                        'type': 'array',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Device MDM ID.',
+                                                       'desc': 'デバイスの MDM ID。',
                                                        'sample': ''}],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'PUT',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}/devices',
-                                     'summary': 'Transfer multiple devices from one device group to another device group.',
+                                     'summary': '複数のデバイスをあるデバイスグループから別のデバイスグループへ移動します。',
                                      'operation_id': 'moveDevicesToGroup',
                                      'sku': '',
-                                     'desc': 'Transfers multiple devices from their current group to the specified target group. A 200 response does not '
-                                             "guarantee all devices were moved; inspect each item's `status` field for individual results. Requires the Manage "
-                                             'Device Groups permission (Agent Management > Device and Device Group Management > Manage, as labelled on the API '
-                                             'Credentials page). Callers without this permission will receive a 403 Forbidden response.',
+                                     'desc': '複数のデバイスを現在のグループから指定したターゲットグループへ移動します。200 '
+                                             'レスポンスはすべてのデバイスが移動されたことを保証するものではありません。個々の結果については各項目の `status` '
+                                             'フィールドを確認してください。Manage Device Groups 権限（API Credentials ページ上の表記では Agent '
+                                             'Management > Device and Device Group Management > '
+                                             'Manage）が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'ID of the target device group.',
+                                                      'desc': 'ターゲットデバイスグループの ID。',
                                                       'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [],
                                      'body': {'device_uids': ['0ODNRjz5THGP0-SAXsTR_w']},
-                                     'body_schema': ['`device_uids` `array[string]` *(required)* — List of device unique identifiers to move. Each value '
-                                                     'corresponds to the device_id field returned by GET /groups/{group_id}/devices.']},
+                                     'body_schema': ['`device_uids` `array[string]` *(必須)* — 移動するデバイスの一意識別子のリスト。各値は '
+                                                     'GET /groups/{group_id}/devices が返す device_id フィールドに対応します。']},
                                     {'method': 'GET',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}/groups',
-                                     'summary': 'Retrieve a list of device groups that are members of a device group.',
+                                     'summary': 'デバイスグループのメンバーであるデバイスグループの一覧を取得します。',
                                      'operation_id': 'listChildDeviceGroups',
                                      'sku': '',
-                                     'desc': 'Returns direct child groups only. Requires the Read Device Groups permission (Agent Management > Device and '
-                                             'Device Group Management > Read, as labelled on the API Credentials page). Callers without this permission will '
-                                             'receive a 403 Forbidden response.',
+                                     'desc': '直下の子グループのみを返します。Read Device Groups 権限（API Credentials ページ上の表記では Agent '
+                                             'Management > Device and Device Group Management > '
+                                             'Read）が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'The ID of the device group for which to return child groups.',
+                                                      'desc': '子グループを返す対象のデバイスグループの ID。',
                                                       'sample': 'Rr_WEJixSMKN19kOilTf-g'}],
                                      'query_params': [{'name': 'page',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '1',
-                                                       'desc': '1-based page number for child group results.',
+                                                       'desc': '子グループ結果のページ番号（1 始まり）。',
                                                        'sample': ''},
                                                       {'name': 'page_size',
                                                        'type': 'integer',
                                                        'required': False,
                                                        'default': '1000',
-                                                       'desc': 'Number of child group records per page. The maximum number of records supported per request is '
-                                                               '1000.',
+                                                       'desc': '1 ページあたりの子グループレコード数。1 回のリクエストでサポートされる最大レコード数は 1000 です。',
                                                        'sample': ''},
                                                       {'name': 'order_by',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Sort order for the returned child device groups. Only the name field is supported, in either '
-                                                               'ascending ("name") or descending ("name desc") direction; sorting is case-insensitive.',
+                                                       'desc': '返される子デバイスグループの並び順。name '
+                                                               'フィールドのみサポートされ、昇順（"name"）または降順（"name '
+                                                               'desc"）を指定できます。並べ替えでは大文字と小文字は区別されません。',
                                                        'sample': ''},
                                                       {'name': 'name',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Filter child groups by name (partial match).',
+                                                       'desc': '名前で子グループをフィルタリングします（部分一致）。',
                                                        'sample': ''}],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'PUT',
                                      'path': '/agent-management/device-groups/v2/groups/{group_id}/groups',
-                                     'summary': 'Move a device group into another device group.',
+                                     'summary': 'デバイスグループを別のデバイスグループへ移動します。',
                                      'operation_id': 'moveGroupToGroup',
                                      'sku': '',
-                                     'desc': 'Moves the specified device group, including all of its children, into the target device group. Moving a group '
-                                             'into one of its own descendants is not permitted and results in a 400 error. Requires the Manage Device Groups '
-                                             'permission (Agent Management > Device and Device Group Management > Manage, as labelled on the API Credentials '
-                                             'page). Callers without this permission will receive a 403 Forbidden response.',
+                                     'desc': '指定したデバイスグループを、そのすべての子を含めてターゲットデバイスグループへ移動します。グループを自身の子孫へ移動することは許可されておらず、400 '
+                                             'エラーになります。Manage Device Groups 権限（API Credentials ページ上の表記では Agent '
+                                             'Management > Device and Device Group Management > '
+                                             'Manage）が必要です。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [{'name': 'group_id',
                                                       'required': True,
-                                                      'desc': 'ID of the destination parent device group to move into. The device group being moved (the '
-                                                              "source group) is identified separately in the request body's id field.",
+                                                      'desc': '移動先となる親デバイスグループの ID。移動対象のデバイスグループ（ソースグループ）は、リクエストボディの '
+                                                              'id フィールドで別途指定します。',
                                                       'sample': '4Zh6VRUJQQauw_-AzxjtHw'}],
                                      'query_params': [],
                                      'body': {'id': '7tiwNJWKSJmE4OYRzwHwsw'},
-                                     'body_schema': ['`id` `string` *(required)* — The unique identifier of the device group to move (the source group). The '
-                                                     'path parameter group_id identifies the destination parent group it will be moved into.']}]},
+                                     'body_schema': ['`id` `string` *(必須)* — 移動するデバイスグループ（ソースグループ）の一意識別子。パスパラメーター '
+                                                     'group_id は、移動先の親グループを指定します。']}]},
  '🕹️ Device Commands': {'doc': 'cbx_device_commands.md',
                         'permissions': ['Device Commands -> Quarantine Device / Unquarantine Device',
                                         'Device Commands -> Scan Device',
@@ -753,233 +760,240 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                                         'Device Commands -> Run LiveUpdate'],
                         'endpoints': [{'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/allow',
-                                       'summary': 'This API lets you unquarantine managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスの隔離を解除できます。',
                                        'operation_id': 'unquarantineDevice',
                                        'sku': '',
-                                       'desc': 'Initiates a command to unquarantine and restore network access for the specified managed devices. This '
-                                               'asynchronous operation returns a 202 Accepted response upon successful initiation. The status of the command '
-                                               'execution can be monitored by polling GET /agent-management/device-commands/v2/commands/{command_id} using the '
-                                               'returned command_state_ref.',
+                                       'desc': '指定した管理対象デバイスの隔離を解除し、ネットワークアクセスを復元するコマンドを開始します。この非同期操作は、正常に開始されると 202 '
+                                               'Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000', '732a3921-1191-447a-85b1-124b81093012']},
-                                       'body_schema': ['`device_ids` `array[string]` *(required)* — The list of device ids to send the command. Minimum 1 and '
-                                                       'maximum 1000 items.']},
+                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000',
+                                                               '732a3921-1191-447a-85b1-124b81093012']},
+                                       'body_schema': ['`device_ids` `array[string]` *(必須)* — コマンドを送信するデバイス ID のリスト。最小 '
+                                                       '1 件、最大 1000 件。']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/contain',
-                                       'summary': 'This API lets you quarantine managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスを隔離できます。',
                                        'operation_id': 'quarantineDevice',
                                        'sku': '',
-                                       'desc': 'Initiates a command to quarantine the specified managed devices, restricting their network access to prevent '
-                                               'threat spread. This asynchronous operation returns a 202 Accepted response upon successful initiation. The '
-                                               'status of the command execution can be monitored by polling GET '
-                                               '/agent-management/device-commands/v2/commands/{command_id} using the returned command_state_ref.',
+                                       'desc': '指定した管理対象デバイスを隔離するコマンドを開始し、ネットワークアクセスを制限して脅威の拡散を防ぎます。この非同期操作は、正常に開始されると '
+                                               '202 Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000', '732a3921-1191-447a-85b1-124b81093012'],
+                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000',
+                                                               '732a3921-1191-447a-85b1-124b81093012'],
                                                 'org_unit_ids': ['org-12345', 'org-67890'],
                                                 'payload': {'quarantine_host_group_name': 'isolated-hosts'},
                                                 'is_recursive': False},
-                                       'body_schema': ['`device_ids` `array[string]` — The list of device ids to send the command. Minimum 1 and maximum 1000 '
-                                                       'items.',
-                                                       '`org_unit_ids` `array[string]` — The list of org unit ids to send the command. Minimum 1 and maximum '
-                                                       '1000 items.',
-                                                       '`payload` `object` *(required)* — The payload containing details for the quarantine command',
-                                                       '`is_recursive` `boolean` — Whether to recursively apply the command to sub-units']},
+                                       'body_schema': ['`device_ids` `array[string]` — コマンドを送信するデバイス ID のリスト。最小 1 件、最大 '
+                                                       '1000 件。',
+                                                       '`org_unit_ids` `array[string]` — コマンドを送信する組織単位 ID のリスト。最小 1 '
+                                                       '件、最大 1000 件。',
+                                                       '`payload` `object` *(必須)* — 隔離コマンドの詳細を含むペイロード',
+                                                       '`is_recursive` `boolean` — コマンドをサブユニットにも再帰的に適用するかどうか']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/files/contain',
-                                       'summary': 'This API lets you quarantine files on managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイス上のファイルを隔離できます。',
                                        'operation_id': 'quarantineFile',
                                        'sku': '',
-                                       'desc': 'Initiates a command to quarantine a specific file on a managed device, preventing its execution and access. '
-                                               'This asynchronous operation returns a 202 Accepted response upon successful initiation. The status of the '
-                                               'command execution can be monitored by polling GET /agent-management/device-commands/v2/commands/{command_id} '
-                                               'using the returned command_state_ref.',
+                                       'desc': '管理対象デバイス上の特定のファイルを隔離するコマンドを開始し、その実行とアクセスを防止します。この非同期操作は、正常に開始されると 202 '
+                                               'Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['123e4567-e89b-12d3-a456-426614174000', '987e6543-e21b-34d3-b456-426614174011'],
+                                       'body': {'device_ids': ['123e4567-e89b-12d3-a456-426614174000',
+                                                               '987e6543-e21b-34d3-b456-426614174011'],
                                                 'hashes': ['e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
                                                            '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92']},
-                                       'body_schema': ['`device_ids` `array[string]` *(required)* — The list of device ids to send the command. Minimum 1 and '
-                                                       'maximum 1000 items.',
-                                                       '`hashes` `array[string]` *(required)* — The list of file hashes to quarantine on devices. Accepts '
-                                                       'SHA-256 hash strings. Minimum 1 and maximum 100 items.']},
+                                       'body_schema': ['`device_ids` `array[string]` *(必須)* — コマンドを送信するデバイス ID のリスト。最小 '
+                                                       '1 件、最大 1000 件。',
+                                                       '`hashes` `array[string]` *(必須)* — '
+                                                       'デバイス上で隔離するファイルハッシュのリスト。SHA-256 ハッシュ文字列を受け付けます。最小 1 件、最大 100 '
+                                                       '件。']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/restart',
-                                       'summary': 'This API lets you reboot managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスを再起動できます。',
                                        'operation_id': 'restartDevice',
                                        'sku': '',
-                                       'desc': 'Restarts the specified managed devices. The devices must be currently online to receive the command. This '
-                                               'asynchronous operation returns a 202 Accepted response upon successful initiation. The status of the command '
-                                               'execution can be monitored by polling GET /agent-management/device-commands/v2/commands/{command_id} using the '
-                                               'returned command_state_ref, or by monitoring the device status via the Devices API (GET '
-                                               '/agent-management/devices/{device_id}) to observe the transition back to an online state.',
+                                       'desc': '指定した管理対象デバイスを再起動します。コマンドを受信するには、デバイスが現在オンラインである必要があります。この非同期操作は、正常に開始されると '
+                                               '202 Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングして返された command_state_ref を使用するか、Devices API（GET '
+                                               '/agent-management/devices/{device_id}）でデバイスのステータスを監視してオンライン状態への復帰を確認することで、コマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['123e4567-e89b-12d3-a456-426614174000', '987e6543-e21b-34d3-b456-426614174011'],
+                                       'body': {'device_ids': ['123e4567-e89b-12d3-a456-426614174000',
+                                                               '987e6543-e21b-34d3-b456-426614174011'],
                                                 'payload': {'prompt_type': 'prompt',
                                                             'schedule_type': 'later',
                                                             'reason_type': 'remediation',
                                                             'message': 'Restarting device for remediation'}},
-                                       'body_schema': ['`device_ids` `array[string]` *(required)* — The list of device ids to send the command. Minimum 1 and '
-                                                       'maximum 1000 items.',
-                                                       '`payload` `object` *(required)* — The payload containing details for the restart command']},
+                                       'body_schema': ['`device_ids` `array[string]` *(必須)* — コマンドを送信するデバイス ID のリスト。最小 '
+                                                       '1 件、最大 1000 件。',
+                                                       '`payload` `object` *(必須)* — 再起動コマンドの詳細を含むペイロード']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/scans/quick',
-                                       'summary': 'This API lets you initiate a quick scan on managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスでクイックスキャンを開始できます。',
                                        'operation_id': 'initiateDeviceScanQuick',
                                        'sku': '',
-                                       'desc': 'Initiates a quick scan on the specified managed devices to detect active threats and malware. This '
-                                               'asynchronous operation returns a 202 Accepted response upon successful initiation. The status of the command '
-                                               'execution can be monitored by polling GET /agent-management/device-commands/v2/commands/{command_id} using the '
-                                               'returned command_state_ref.',
+                                       'desc': '指定した管理対象デバイスでクイックスキャンを開始し、アクティブな脅威やマルウェアを検出します。この非同期操作は、正常に開始されると 202 '
+                                               'Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000', '732a3921-1191-447a-85b1-124b81093012'],
+                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000',
+                                                               '732a3921-1191-447a-85b1-124b81093012'],
                                                 'org_unit_ids': ['org-12345', 'org-67890'],
                                                 'is_recursive': False},
-                                       'body_schema': ['`device_ids` `array[string]` — The list of device ids to send the command. Minimum 1 and maximum 1000 '
-                                                       'items.',
-                                                       '`org_unit_ids` `array[string]` — The list of org unit ids to send the command. Minimum 1 and maximum '
-                                                       '1000 items.',
-                                                       '`is_recursive` `boolean` — Whether to recursively apply the command to sub-units']},
+                                       'body_schema': ['`device_ids` `array[string]` — コマンドを送信するデバイス ID のリスト。最小 1 件、最大 '
+                                                       '1000 件。',
+                                                       '`org_unit_ids` `array[string]` — コマンドを送信する組織単位 ID のリスト。最小 1 '
+                                                       '件、最大 1000 件。',
+                                                       '`is_recursive` `boolean` — コマンドをサブユニットにも再帰的に適用するかどうか']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/scans/full',
-                                       'summary': 'This API lets you initiate a full scan on managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスでフルスキャンを開始できます。',
                                        'operation_id': 'initiateDeviceScanFull',
                                        'sku': '',
-                                       'desc': 'Initiates a full scan on the specified managed devices to perform a deep system analysis and threat detection. '
-                                               'This asynchronous operation returns a 202 Accepted response upon successful initiation. The status of the '
-                                               'command execution can be monitored by polling GET /agent-management/device-commands/v2/commands/{command_id} '
-                                               'using the returned command_state_ref.',
+                                       'desc': '指定した管理対象デバイスでフルスキャンを開始し、詳細なシステム分析と脅威検出を実行します。この非同期操作は、正常に開始されると 202 '
+                                               'Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000', '732a3921-1191-447a-85b1-124b81093012'],
+                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000',
+                                                               '732a3921-1191-447a-85b1-124b81093012'],
                                                 'org_unit_ids': ['org-12345', 'org-67890'],
                                                 'is_recursive': False},
-                                       'body_schema': ['`device_ids` `array[string]` — The list of device ids to send the command. Minimum 1 and maximum 1000 '
-                                                       'items.',
-                                                       '`org_unit_ids` `array[string]` — The list of org unit ids to send the command. Minimum 1 and maximum '
-                                                       '1000 items.',
-                                                       '`is_recursive` `boolean` — Whether to recursively apply the command to sub-units']},
+                                       'body_schema': ['`device_ids` `array[string]` — コマンドを送信するデバイス ID のリスト。最小 1 件、最大 '
+                                                       '1000 件。',
+                                                       '`org_unit_ids` `array[string]` — コマンドを送信する組織単位 ID のリスト。最小 1 '
+                                                       '件、最大 1000 件。',
+                                                       '`is_recursive` `boolean` — コマンドをサブユニットにも再帰的に適用するかどうか']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/scans/custom',
-                                       'summary': 'This API lets you initiate a custom scan on managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスでカスタムスキャンを開始できます。',
                                        'operation_id': 'initiateDeviceScanCustom',
                                        'sku': '',
-                                       'desc': 'Initiates a custom scan on the specified managed devices based on custom scan parameters. This asynchronous '
-                                               'operation returns a 202 Accepted response upon successful initiation. The status of the command execution can '
-                                               'be monitored by polling GET /agent-management/device-commands/v2/commands/{command_id} using the returned '
-                                               'command_state_ref.',
+                                       'desc': 'カスタムスキャンパラメーターに基づき、指定した管理対象デバイスでカスタムスキャンを開始します。この非同期操作は、正常に開始されると 202 '
+                                               'Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000', '732a3921-1191-447a-85b1-124b81093012'],
+                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000',
+                                                               '732a3921-1191-447a-85b1-124b81093012'],
                                                 'org_unit_ids': ['org-12345', 'org-67890'],
                                                 'is_recursive': False},
-                                       'body_schema': ['`device_ids` `array[string]` — The list of device ids to send the command. Minimum 1 and maximum 1000 '
-                                                       'items.',
-                                                       '`org_unit_ids` `array[string]` — The list of org unit ids to send the command. Minimum 1 and maximum '
-                                                       '1000 items.',
-                                                       '`is_recursive` `boolean` — Whether to recursively apply the command to sub-units']},
+                                       'body_schema': ['`device_ids` `array[string]` — コマンドを送信するデバイス ID のリスト。最小 1 件、最大 '
+                                                       '1000 件。',
+                                                       '`org_unit_ids` `array[string]` — コマンドを送信する組織単位 ID のリスト。最小 1 '
+                                                       '件、最大 1000 件。',
+                                                       '`is_recursive` `boolean` — コマンドをサブユニットにも再帰的に適用するかどうか']},
                                       {'method': 'POST',
                                        'path': '/agent-management/device-commands/v2/commands/update-content',
-                                       'summary': 'This API lets you update security definitions and content of managed devices.',
+                                       'summary': 'この API を使用すると、管理対象デバイスのセキュリティ定義とコンテンツを更新できます。',
                                        'operation_id': 'updateDeviceContent',
                                        'sku': '',
-                                       'desc': 'Initiates a command to update the security definitions, policies, and signature content on the specified '
-                                               'managed devices to ensure they have the latest protection. This asynchronous operation returns a 202 Accepted '
-                                               'response upon successful initiation. The status of the command execution can be monitored by polling GET '
-                                               '/agent-management/device-commands/v2/commands/{command_id} using the returned command_state_ref.',
+                                       'desc': '指定した管理対象デバイスのセキュリティ定義、ポリシー、シグネチャコンテンツを更新するコマンドを開始し、最新の保護状態を確保します。この非同期操作は、正常に開始されると '
+                                               '202 Accepted レスポンスを返します。GET '
+                                               '/agent-management/device-commands/v2/commands/{command_id} '
+                                               'をポーリングし、返された command_state_ref を使用してコマンド実行のステータスを監視できます。',
                                        'path_params': [],
                                        'query_params': [],
-                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000', '732a3921-1191-447a-85b1-124b81093012'],
+                                       'body': {'device_ids': ['550e8400-e29b-41d4-a716-446655440000',
+                                                               '732a3921-1191-447a-85b1-124b81093012'],
                                                 'org_unit_ids': ['org-12345', 'org-67890'],
                                                 'is_recursive': False},
-                                       'body_schema': ['`device_ids` `array[string]` — The list of device ids to send the command. Minimum 1 and maximum 1000 '
-                                                       'items.',
-                                                       '`org_unit_ids` `array[string]` — The list of org unit ids to send the command. Minimum 1 and maximum '
-                                                       '1000 items.',
-                                                       '`is_recursive` `boolean` — Whether to recursively apply the command to sub-units']},
+                                       'body_schema': ['`device_ids` `array[string]` — コマンドを送信するデバイス ID のリスト。最小 1 件、最大 '
+                                                       '1000 件。',
+                                                       '`org_unit_ids` `array[string]` — コマンドを送信する組織単位 ID のリスト。最小 1 '
+                                                       '件、最大 1000 件。',
+                                                       '`is_recursive` `boolean` — コマンドをサブユニットにも再帰的に適用するかどうか']},
                                       {'method': 'GET',
                                        'path': '/agent-management/device-commands/v2/commands',
-                                       'summary': 'This API lets you retrieve a list of all commands.',
+                                       'summary': 'この API を使用すると、すべてのコマンドの一覧を取得できます。',
                                        'operation_id': 'listDeviceCommands',
                                        'sku': '',
-                                       'desc': 'Retrieves a paginated list of all device commands filtered by optional query parameters.',
+                                       'desc': 'オプションのクエリパラメーターでフィルタリングされた、すべてのデバイスコマンドのページ分割された一覧を取得します。',
                                        'path_params': [],
                                        'query_params': [{'name': 'page_size',
                                                          'type': 'integer',
                                                          'required': False,
                                                          'default': '100',
-                                                         'desc': 'The number of records fetched in a given request. The maximum number of records supported '
-                                                                 'per request is 1000.',
+                                                         'desc': '1 回のリクエストで取得するレコード数。1 回のリクエストでサポートされる最大レコード数は 1000 '
+                                                                 'です。',
                                                          'sample': ''},
                                                         {'name': 'page',
                                                          'type': 'integer',
                                                          'required': False,
                                                          'default': '1',
-                                                         'desc': 'When this field is not present, it returns the first page.',
+                                                         'desc': 'このフィールドが指定されていない場合は、最初のページが返されます。',
                                                          'sample': ''},
                                                         {'name': 'correlation_id',
                                                          'type': 'array',
                                                          'required': False,
                                                          'default': '',
-                                                         'desc': 'The correlation ID associated with the command to search for. Multiple correlation IDs can '
-                                                                 'be provided as a comma-separated list.',
+                                                         'desc': '検索対象のコマンドに関連付けられた相関 ID。複数の相関 ID をカンマ区切りのリストで指定できます。',
                                                          'sample': ''},
                                                         {'name': 'device_id',
                                                          'type': 'array',
                                                          'required': False,
                                                          'default': '',
-                                                         'desc': 'The unique device identifier (UUID) to search for. This corresponds to the UUID-formatted '
-                                                                 'device_ids used in the POST command bodies. Multiple device IDs can be provided as a '
-                                                                 'comma-separated list.',
+                                                         'desc': '検索対象の一意のデバイス識別子（UUID）。これは POST コマンドのボディで使用される UUID '
+                                                                 '形式の device_ids に対応します。複数のデバイス ID をカンマ区切りのリストで指定できます。',
                                                          'sample': ''},
                                                         {'name': 'created',
                                                          'type': 'string',
                                                          'required': False,
                                                          'default': '',
-                                                         'desc': 'The created date in ISO 8601 format. Must be prepended with a > or <. Multiple range '
-                                                                 'expressions can be provided as a comma-separated list within a single string value to define '
-                                                                 'a range, e.g., >2026-0…',
+                                                         'desc': 'ISO 8601 形式の作成日。先頭に > または < '
+                                                                 'を付ける必要があります。範囲を定義するために、単一の文字列値内で複数の範囲式をカンマ区切りのリストとして指定できます。例: '
+                                                                 '>2026-0…',
                                                          'sample': ''},
                                                         {'name': 'modified',
                                                          'type': 'string',
                                                          'required': False,
                                                          'default': '',
-                                                         'desc': 'The modified date in ISO 8601 format. Must be prepended with a > or <. Multiple range '
-                                                                 'expressions can be provided as a comma-separated list within a single string value to define '
-                                                                 'a range, e.g., >2026-…',
+                                                         'desc': 'ISO 8601 形式の更新日。先頭に > または < '
+                                                                 'を付ける必要があります。範囲を定義するために、単一の文字列値内で複数の範囲式をカンマ区切りのリストとして指定できます。例: '
+                                                                 '>2026-…',
                                                          'sample': ''},
                                                         {'name': 'command_name',
                                                          'type': 'string',
                                                          'required': False,
                                                          'default': '',
-                                                         'desc': 'The command name to search for. Valid values are: - FDR: Flight Data Recorder command. - '
-                                                                 'RESTART: Reboot the managed devices. - QUARANTINE_DEVICE: Quarantine the specified devices. '
-                                                                 '- UNQUARANTINE_DEVI…',
+                                                         'desc': '検索対象のコマンド名。有効な値: - FDR: Flight Data Recorder コマンド。- '
+                                                                 'RESTART: 管理対象デバイスを再起動します。- QUARANTINE_DEVICE: '
+                                                                 '指定したデバイスを隔離します。- UNQUARANTINE_DEVI…',
                                                          'sample': ''},
                                                         {'name': 'state',
                                                          'type': 'array',
                                                          'required': False,
                                                          'default': '',
-                                                         'desc': 'The command execution state to search for. Multiple states can be provided as a '
-                                                                 'comma-separated list. Valid values are: - PENDING: The command is queued but has not yet '
-                                                                 'started. - IN_PROGRESS: The com…',
+                                                         'desc': '検索対象のコマンド実行状態。複数の状態をカンマ区切りのリストで指定できます。有効な値: - '
+                                                                 'PENDING: コマンドはキューに入っていますが、まだ開始されていません。- IN_PROGRESS: '
+                                                                 'コマンドは…',
                                                          'sample': ''}],
                                        'body': None,
                                        'body_schema': []},
                                       {'method': 'GET',
                                        'path': '/agent-management/device-commands/v2/commands/{command_id}',
-                                       'summary': 'This API lets you retrieve command details.',
+                                       'summary': 'この API を使用すると、コマンドの詳細を取得できます。',
                                        'operation_id': 'getDeviceCommandDetails',
                                        'sku': '',
-                                       'desc': 'Retrieves detailed information and execution status for a specific device command.',
+                                       'desc': '特定のデバイスコマンドの詳細情報と実行ステータスを取得します。',
                                        'path_params': [{'name': 'command_id',
                                                         'required': True,
-                                                        'desc': 'The unique identifier of the command details to return. The server accepts either the '
-                                                                'UUID-formatted `command_state_ref` returned by the command-issuing POST endpoints, or the '
-                                                                'opaque string `id` retur…',
+                                                        'desc': '返すコマンド詳細の一意識別子。サーバーは、コマンドを発行する POST エンドポイントが返す UUID '
+                                                                '形式の `command_state_ref`、または…が返す不透明な文字列 `id` '
+                                                                'のいずれかを受け付けます…',
                                                         'sample': '-CCS-CMD-TD6TBi8mTiWO_4TiLZy91w'}],
                                        'query_params': [],
                                        'body': None,
@@ -988,260 +1002,270 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                  'permissions': ['Reports -> View Endpoint Security', 'Reports -> Manage Endpoint Security'],
                  'endpoints': [{'method': 'GET',
                                 'path': '/common/reporting/v1/report-templates',
-                                'summary': 'This API lets you retrieve the list of report templates.',
+                                'summary': 'この API を使用すると、レポートテンプレートの一覧を取得できます。',
                                 'operation_id': 'listReportTemplates',
                                 'sku': '',
-                                'desc': 'Retrieves a list of report templates with their configurations, filters, and scheduling information. Required '
-                                        'permission: ses_view_reports. Callers without this permission will receive a 403 Forbidden response.',
+                                'desc': 'レポートテンプレートの一覧を、その構成、フィルター、スケジュール情報とともに取得します。必要な権限: '
+                                        'ses_view_reports。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                 'path_params': [],
                                 'query_params': [{'name': 'page',
                                                   'type': 'integer',
                                                   'required': False,
                                                   'default': '1',
-                                                  'desc': 'Page number to retrieve (1-based).',
+                                                  'desc': '取得するページ番号（1 始まり）。',
                                                   'sample': ''},
                                                  {'name': 'page_size',
                                                   'type': 'integer',
                                                   'required': False,
                                                   'default': '25',
-                                                  'desc': 'Number of records per page.',
+                                                  'desc': '1 ページあたりのレコード数。',
                                                   'sample': ''},
                                                  {'name': 'report_type_id',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report type',
+                                                  'desc': 'レポートタイプでフィルタリングします',
                                                   'sample': ''},
                                                  {'name': 'report_format',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report format. Valid values: `PDF` (Portable Document Format), `CSV` (Comma-Separated '
-                                                          'Values), `HTML` (HyperText Markup Language), `EMAIL` (sent as the body of an email rather than a '
-                                                          'downloa…',
+                                                  'desc': 'レポート形式でフィルタリングします。有効な値: `PDF`（Portable Document '
+                                                          'Format）、`CSV`（カンマ区切り値）、`HTML`（HyperText Markup '
+                                                          'Language）、`EMAIL`（ダウンロード…ではなくメール本文として送信…',
                                                   'sample': ''}],
                                 'body': None,
                                 'body_schema': []},
                                {'method': 'POST',
                                 'path': '/common/reporting/v1/report-templates',
-                                'summary': 'This API lets you create a new report template.',
+                                'summary': 'この API を使用すると、新しいレポートテンプレートを作成できます。',
                                 'operation_id': 'createReportTemplate',
                                 'sku': '',
-                                'desc': 'Creates a new report template with the provided configuration. Required permission: ses_manage_reports. Callers '
-                                        'without this permission will receive a 403 Forbidden response.',
+                                'desc': '指定された構成で新しいレポートテンプレートを作成します。必要な権限: ses_manage_reports。この権限を持たない呼び出し元には 403 '
+                                        'Forbidden レスポンスが返されます。',
                                 'path_params': [],
                                 'query_params': [],
                                 'body': {'name': 'Default Weekly Report',
                                          'report_type_id': 'saep-weekly-report',
                                          'report_format': 'PDF',
-                                         'schedule': {'schedule_type': 'WEEKLY', 'days_of_week': ['MONDAY', 'WEDNESDAY', 'FRIDAY'], 'repeat_frequency': 1},
-                                         'report_recipients': [{'email': 'john.doe@broadcom.com', 'email_notification': True, 'email_as_attachment': False}],
+                                         'schedule': {'schedule_type': 'WEEKLY',
+                                                      'days_of_week': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
+                                                      'repeat_frequency': 1},
+                                         'report_recipients': [{'email': 'john.doe@broadcom.com',
+                                                                'email_notification': True,
+                                                                'email_as_attachment': False}],
                                          'schedule_at': '2026-12-01T10:00:00.000Z'},
-                                'body_schema': ['`name` `string` *(required)* — Name of the report template',
-                                                '`report_type_id` `string` *(required)* — Identifier of the report type for this template',
-                                                '`report_format` `string` *(required)* — Format in which the report will be generated. Valid values: `PDF` '
-                                                '(Portable Document Format), `CSV` (Comma-Separated Values), `HTML` (HyperText Markup Language)…',
-                                                '`schedule` `any` *(required)* — Configuration for how frequently the report should be generated',
-                                                '`schedule_at` `string` — Schedule anchor in ISO 8601 UTC. Required when `schedule.schedule_type` is `DAILY`, '
-                                                '`WEEKLY`, `MONTHLY`, or `QUARTERLY`; omit or set to `null` for `ONCE_A_DAY`, `VARIABLE`, an…',
-                                                '`report_recipients` `array[object]` — Report recipient settings configuration. Omit or send null to create '
-                                                'the template with no recipients.',
-                                                '`report_filters` `object` — May be included in the request body only when report_type_id is '
-                                                'fw-comprehensive-report or ips-comprehensive-report; including it for other report types returns 400. Omit '
-                                                'o…']},
+                                'body_schema': ['`name` `string` *(必須)* — レポートテンプレートの名前',
+                                                '`report_type_id` `string` *(必須)* — このテンプレートのレポートタイプの識別子',
+                                                '`report_format` `string` *(必須)* — レポートを生成する形式。有効な値: `PDF`（Portable '
+                                                'Document Format）、`CSV`（カンマ区切り値）、`HTML`（HyperText Markup Language）…',
+                                                '`schedule` `any` *(必須)* — レポートを生成する頻度の構成',
+                                                '`schedule_at` `string` — ISO 8601 UTC '
+                                                '形式のスケジュール基準日時。`schedule.schedule_type` が '
+                                                '`DAILY`、`WEEKLY`、`MONTHLY`、`QUARTERLY` '
+                                                'の場合は必須です。`ONCE_A_DAY`、`VARIABLE`、…の場合は省略するか `null` を設定…',
+                                                '`report_recipients` `array[object]` — '
+                                                'レポート受信者の設定構成。受信者なしでテンプレートを作成する場合は、省略するか null を送信します。',
+                                                '`report_filters` `object` — report_type_id が fw-comprehensive-report '
+                                                'または ips-comprehensive-report '
+                                                'の場合にのみリクエストボディに含めることができます。その他のレポートタイプで含めると 400 が返されます。省略…']},
                                {'method': 'GET',
                                 'path': '/common/reporting/v1/reports',
-                                'summary': 'This API lets you retrieve the list of generated reports.',
+                                'summary': 'この API を使用すると、生成済みレポートの一覧を取得できます。',
                                 'operation_id': 'listReports',
                                 'sku': '',
-                                'desc': 'Retrieves a list of all generated reports with their status, creation dates, and completion dates. Download links are '
-                                        'not included in list responses: `download_link` is always `null` in results returned by this endpoint regardless of '
-                                        'the `include_download_link` parameter. To obtain a usable download link, fetch the individual report by ID with '
-                                        '`include_download_link=true`. Supports pagination and filtering by report type and template ID. Required permission: '
-                                        'ses_view_reports. Callers without this permission will receive a 403 Forbidden response.',
+                                'desc': '生成済みのすべてのレポートの一覧を、ステータス、作成日、完了日とともに取得します。一覧レスポンスにはダウンロードリンクは含まれません。このエンドポイントが返す結果では、`include_download_link` '
+                                        'パラメーターに関係なく `download_link` は常に `null` '
+                                        'です。使用可能なダウンロードリンクを取得するには、`include_download_link=true` を指定して ID '
+                                        'で個別のレポートを取得してください。ページネーション、およびレポートタイプとテンプレート ID によるフィルタリングをサポートします。必要な権限: '
+                                        'ses_view_reports。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                 'path_params': [],
                                 'query_params': [{'name': 'page',
                                                   'type': 'integer',
                                                   'required': False,
                                                   'default': '1',
-                                                  'desc': 'Page number to retrieve (1-based).',
+                                                  'desc': '取得するページ番号（1 始まり）。',
                                                   'sample': ''},
                                                  {'name': 'page_size',
                                                   'type': 'integer',
                                                   'required': False,
                                                   'default': '25',
-                                                  'desc': 'Number of records per page.',
+                                                  'desc': '1 ページあたりのレコード数。',
                                                   'sample': ''},
                                                  {'name': 'report_type_id',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report type',
+                                                  'desc': 'レポートタイプでフィルタリングします',
                                                   'sample': ''},
                                                  {'name': 'template_id',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report template ID to get all reports generated using a specific template.',
+                                                  'desc': 'レポートテンプレート ID でフィルタリングし、特定のテンプレートを使用して生成されたすべてのレポートを取得します。',
                                                   'sample': ''},
                                                  {'name': 'name',
                                                   'type': 'array',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report template name. Provide multiple values to search for multiple names.',
+                                                  'desc': 'レポートテンプレート名でフィルタリングします。複数の名前を検索する場合は、複数の値を指定します。',
                                                   'sample': ''},
                                                  {'name': 'format',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report format. Valid values: `PDF` (Portable Document Format), `CSV` (Comma-Separated '
-                                                          'Values), `HTML` (HyperText Markup Language), `EMAIL` (sent as the body of an email rather than a '
-                                                          'downloa…',
+                                                  'desc': 'レポート形式でフィルタリングします。有効な値: `PDF`（Portable Document '
+                                                          'Format）、`CSV`（カンマ区切り値）、`HTML`（HyperText Markup '
+                                                          'Language）、`EMAIL`（ダウンロード…ではなくメール本文として送信…',
                                                   'sample': ''},
                                                  {'name': 'status',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by report status. Available values: IN_PROGRESS, COMPLETED, FAILED',
+                                                  'desc': 'レポートのステータスでフィルタリングします。指定可能な値: IN_PROGRESS, COMPLETED, '
+                                                          'FAILED',
                                                   'sample': ''},
                                                  {'name': 'created_at',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by creation date. Each token must be prefixed with > (after) or < (before) and the date-time '
-                                                          'must be ISO 8601 UTC enclosed in single quotes. Provide two comma-separated tokens for a range, '
-                                                          'e.g.…',
+                                                  'desc': '作成日でフィルタリングします。各トークンには > (以降) または < (以前) '
+                                                          'をプレフィックスとして付け、日時は単一引用符で囲んだ ISO 8601 UTC '
+                                                          '形式で指定する必要があります。範囲を指定する場合は、カンマ区切りで 2 つのトークンを指定します。例:…',
                                                   'sample': ''},
                                                  {'name': 'generation_mode',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by generation mode. Available values: ad-hoc, scheduled',
+                                                  'desc': '生成モードでフィルタリングします。指定可能な値: ad-hoc, scheduled',
                                                   'sample': ''},
                                                  {'name': 'language',
                                                   'type': 'string',
                                                   'required': False,
                                                   'default': '',
-                                                  'desc': 'Filter by language/locale setting (e.g., en for English).',
+                                                  'desc': '言語/ロケール設定でフィルタリングします (例: 英語の場合は en)。',
                                                   'sample': ''}],
                                 'body': None,
                                 'body_schema': []},
                                {'method': 'POST',
                                 'path': '/common/reporting/v1/report-templates/{template_id}/generate',
-                                'summary': 'This API lets you generate a report using an existing report template by ID.',
+                                'summary': '既存のレポートテンプレートを ID で指定してレポートを生成する API です。',
                                 'operation_id': 'generateReportByTemplateId',
                                 'sku': '',
-                                'desc': 'Generates a report using the configuration from an existing report template. This is a simplified endpoint that only '
-                                        'requires the template ID. Required permission: ses_manage_reports. Callers without this permission will receive a 403 '
-                                        'Forbidden response.',
+                                'desc': '既存のレポートテンプレートの設定を使用してレポートを生成します。テンプレート ID のみを必要とする簡易エンドポイントです。必要な権限: '
+                                        'ses_manage_reports。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                 'path_params': [{'name': 'template_id',
                                                  'required': True,
-                                                 'desc': 'The UUID of the report template to use for generation.',
+                                                 'desc': '生成に使用するレポートテンプレートの UUID。',
                                                  'sample': '3114e32c-bcb1-4bd7-b403-b73d7f297b40'}],
                                 'query_params': [],
                                 'body': None,
                                 'body_schema': []},
                                {'method': 'GET',
                                 'path': '/common/reporting/v1/reports/{report_id}',
-                                'summary': 'This API lets you get the status and download link for a generated report.',
+                                'summary': '生成されたレポートのステータスとダウンロードリンクを取得する API です。',
                                 'operation_id': 'getReportStatus',
                                 'sku': '',
-                                'desc': 'Retrieves the status and metadata of a report generation job including creation date, completion date, and optional '
-                                        'download link. The download link is included in the response when include_download_link=true and the report is '
-                                        'completed. Required permission: ses_view_reports. Callers without this permission will receive a 403 Forbidden '
-                                        'response.',
+                                'desc': 'レポート生成ジョブのステータスとメタデータ (作成日、完了日、および任意のダウンロードリンクを含む) '
+                                        'を取得します。include_download_link=true '
+                                        'が指定され、かつレポートが完了している場合、レスポンスにダウンロードリンクが含まれます。必要な権限: '
+                                        'ses_view_reports。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                 'path_params': [{'name': 'report_id',
                                                  'required': True,
-                                                 'desc': 'The UUID of the report generation job.',
+                                                 'desc': 'レポート生成ジョブの UUID。',
                                                  'sample': '7d16d3cd-6460-48bb-b2ff-3668afafd940'}],
                                 'query_params': [{'name': 'include_download_link',
                                                   'type': 'boolean',
                                                   'required': False,
                                                   'default': 'false',
-                                                  'desc': 'If set to true, includes the download link in the response when the report is completed. Download '
-                                                          'link is only available for completed reports.',
+                                                  'desc': 'true '
+                                                          'に設定すると、レポートの完了時にレスポンスにダウンロードリンクが含まれます。ダウンロードリンクは完了したレポートでのみ利用できます。',
                                                   'sample': ''}],
                                 'body': None,
                                 'body_schema': []},
                                {'method': 'GET',
                                 'path': '/common/reporting/v1/report-templates/{template_id}',
-                                'summary': 'This API lets you retrieve a specific report template by ID.',
+                                'summary': '特定のレポートテンプレートを ID で取得する API です。',
                                 'operation_id': 'getReportTemplate',
                                 'sku': '',
-                                'desc': 'Retrieves a single report template with its configuration, filters, and scheduling information. Required permission: '
-                                        'ses_view_reports. Callers without this permission will receive a 403 Forbidden response.',
+                                'desc': '単一のレポートテンプレートを、その設定、フィルター、およびスケジュール情報とともに取得します。必要な権限: '
+                                        'ses_view_reports。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                 'path_params': [{'name': 'template_id',
                                                  'required': True,
-                                                 'desc': 'The UUID of the report template to retrieve.',
+                                                 'desc': '取得するレポートテンプレートの UUID。',
                                                  'sample': '3114e32c-bcb1-4bd7-b403-b73d7f297b40'}],
                                 'query_params': [],
                                 'body': None,
                                 'body_schema': []},
                                {'method': 'PUT',
                                 'path': '/common/reporting/v1/report-templates/{template_id}',
-                                'summary': 'This API lets you update the report template configuration.',
+                                'summary': 'レポートテンプレートの設定を更新する API です。',
                                 'operation_id': 'updateReportTemplate',
                                 'sku': '',
-                                'desc': 'Replaces the updatable fields of an existing report template: Name, Schedule, Report Format, and Report Recipient '
-                                        'Settings. As a PUT, the request body must include the full representation of these fields — any updatable field '
-                                        'omitted from the body is reset rather than left unchanged. Fields outside this set (e.g. template_id, report_type_id) '
-                                        'are read-only and cannot be modified via this endpoint; if other fields are provided in the request body, the request '
-                                        'may fail with a 400 Bad Input error. The template ID must be included in the URI path. Required permission: '
-                                        'ses_manage_reports. Callers wi…',
+                                'desc': '既存のレポートテンプレートの更新可能なフィールド (名前、スケジュール、レポート形式、レポート受信者設定) を置き換えます。PUT '
+                                        'であるため、リクエストボディにはこれらのフィールドの完全な表現を含める必要があります。ボディで省略された更新可能なフィールドは、変更されずに保持されるのではなくリセットされます。このセット以外のフィールド '
+                                        '(例: template_id, report_type_id) '
+                                        'は読み取り専用であり、このエンドポイントでは変更できません。リクエストボディに他のフィールドが指定された場合、リクエストは 400 Bad Input '
+                                        'エラーで失敗する可能性があります。テンプレート ID は URI パスに含める必要があります。必要な権限: '
+                                        'ses_manage_reports。この権限を持たない呼び出し元…',
                                 'path_params': [{'name': 'template_id',
                                                  'required': True,
-                                                 'desc': 'The UUID of the report template to update.',
+                                                 'desc': '更新するレポートテンプレートの UUID。',
                                                  'sample': '3114e32c-bcb1-4bd7-b403-b73d7f297b40'}],
                                 'query_params': [],
                                 'body': {'name': 'Updated Weekly Report',
                                          'report_format': 'PDF',
-                                         'schedule': {'schedule_type': 'WEEKLY', 'days_of_week': ['MONDAY', 'WEDNESDAY', 'FRIDAY'], 'repeat_frequency': 1},
+                                         'schedule': {'schedule_type': 'WEEKLY',
+                                                      'days_of_week': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
+                                                      'repeat_frequency': 1},
                                          'schedule_at': '2026-12-01T10:00:00.000Z'},
-                                'body_schema': ['`name` `string` *(required)* — Name of the report template',
-                                                '`report_format` `string` *(required)* — Format in which the report will be generated. Valid values: `PDF` '
-                                                '(Portable Document Format), `CSV` (Comma-Separated Values), `HTML` (HyperText Markup Language)…',
-                                                '`schedule` `any` *(required)* — Configuration for how frequently the report should be generated',
-                                                '`report_recipients` `array[object]` — Report recipient settings configuration',
-                                                '`schedule_at` `string` — Schedule anchor in ISO 8601 UTC. Required when schedule_type is DAILY, WEEKLY, '
-                                                'MONTHLY, or QUARTERLY. Omit or set to null for NONE, VARIABLE, TWO_PER_QUARTER, or ONCE_A_DAY.',
-                                                "`report_filters` `object` — Report filters configuration. Applicable only when the template's "
-                                                '`report_type_id` is `fw-comprehensive-report` or `ips-comprehensive-report`. Send `null` to clear existing…']},
+                                'body_schema': ['`name` `string` *(必須)* — レポートテンプレートの名前',
+                                                '`report_format` `string` *(必須)* — レポートを生成する形式。有効な値: `PDF`（Portable '
+                                                'Document Format）、`CSV`（カンマ区切り値）、`HTML`（HyperText Markup Language）…',
+                                                '`schedule` `any` *(必須)* — レポートを生成する頻度の構成',
+                                                '`report_recipients` `array[object]` — レポート受信者の設定',
+                                                '`schedule_at` `string` — ISO 8601 UTC 形式のスケジュール基準日時。schedule_type が '
+                                                'DAILY, WEEKLY, MONTHLY, または QUARTERLY の場合は必須です。NONE, VARIABLE, '
+                                                'TWO_PER_QUARTER, または ONCE_A_DAY の場合は省略するか null を設定します。',
+                                                '`report_filters` `object` — レポートフィルターの設定。テンプレートの `report_type_id` が '
+                                                '`fw-comprehensive-report` または `ips-comprehensive-report` '
+                                                'の場合にのみ適用されます。`null` を送信すると、既存の…']},
                                {'method': 'DELETE',
                                 'path': '/common/reporting/v1/report-templates/{template_id}',
-                                'summary': 'This API lets you delete a report template by ID.',
+                                'summary': 'レポートテンプレートを ID で指定して削除する API です。',
                                 'operation_id': 'deleteReportTemplate',
                                 'sku': '',
-                                'desc': 'Deletes a report template with the specified ID. Required permission: ses_manage_reports. Callers without this '
-                                        'permission will receive a 403 Forbidden response.',
+                                'desc': '指定された ID のレポートテンプレートを削除します。必要な権限: ses_manage_reports。この権限を持たない呼び出し元には 403 '
+                                        'Forbidden レスポンスが返されます。',
                                 'path_params': [{'name': 'template_id',
                                                  'required': True,
-                                                 'desc': 'The UUID of the report template to delete.',
+                                                 'desc': '削除するレポートテンプレートの UUID。',
                                                  'sample': '3114e32c-bcb1-4bd7-b403-b73d7f297b40'}],
                                 'query_params': [],
                                 'body': None,
                                 'body_schema': []},
                                {'method': 'GET',
                                 'path': '/common/reporting/v1/report-templates/{template_id}/reports',
-                                'summary': 'This API lets you retrieve reports generated using a specific report template.',
+                                'summary': '特定のレポートテンプレートを使用して生成されたレポートを取得する API です。',
                                 'operation_id': 'listReportsByTemplateId',
                                 'sku': '',
-                                'desc': 'Lists reports that are generated using the report-template id specified in the URL. Supports pagination. Required '
-                                        'permission: ses_view_reports. Callers without this permission will receive a 403 Forbidden response.',
+                                'desc': 'URL で指定されたレポートテンプレート ID を使用して生成されたレポートを一覧表示します。ページネーションに対応しています。必要な権限: '
+                                        'ses_view_reports。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                 'path_params': [{'name': 'template_id',
                                                  'required': True,
-                                                 'desc': 'The UUID of the report template.',
+                                                 'desc': 'レポートテンプレートの UUID。',
                                                  'sample': '9c3ff049-9f7a-4b4f-8958-add0d3328884'}],
                                 'query_params': [{'name': 'page',
                                                   'type': 'integer',
                                                   'required': False,
                                                   'default': '1',
-                                                  'desc': 'Page number to retrieve (1-based).',
+                                                  'desc': '取得するページ番号（1 始まり）。',
                                                   'sample': ''},
                                                  {'name': 'page_size',
                                                   'type': 'integer',
                                                   'required': False,
                                                   'default': '25',
-                                                  'desc': 'Number of records per page.',
+                                                  'desc': '1 ページあたりのレコード数。',
                                                   'sample': ''}],
                                 'body': None,
                                 'body_schema': []}]},
@@ -1249,109 +1273,117 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                       'permissions': ['Data Forwarder -> View', 'Data Forwarder -> Manage'],
                       'endpoints': [{'method': 'GET',
                                      'path': '/common/data-forwarders/v3/configs',
-                                     'summary': 'Get all configured forwarders',
+                                     'summary': '設定済みのすべてのフォワーダーの取得',
                                      'operation_id': 'listConfigs',
                                      'sku': '',
-                                     'desc': 'Returns all forwarder configurations for the environment associated with the authenticated token. Disabled '
-                                             'forwarders are included. The array has no guaranteed ordering. Requires Data Forwarder `READ` permission.',
+                                     'desc': '認証済みトークンに関連付けられた環境のすべてのフォワーダー設定を返します。無効化されたフォワーダーも含まれます。配列の順序は保証されません。Data '
+                                             'Forwarder の `READ` 権限が必要です。',
                                      'path_params': [],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'POST',
                                      'path': '/common/data-forwarders/v3/configs',
-                                     'summary': 'Create a new forwarder configuration',
+                                     'summary': '新しいフォワーダー設定の作成',
                                      'operation_id': 'createConfig',
                                      'sku': '',
-                                     'desc': 'Creates a new forwarder. The API will make calls to check whether the forwarder can write to the specified '
-                                             'storage using the configuration supplied. It will attempt to write a test message called `healthcheck.json` to '
-                                             'the specified bucket or container under a sub-folder called `healthcheck`. If the bucket is misconfigured (e.g. '
-                                             "incorrect permissions, principal ARN, etc.) or the configuration is incorrect (e.g. bucket prefix doesn't match "
-                                             'path specified in policy), the API will respond with a `400` error with information about what was incorrect and '
-                                             'how to fix the issue. Requires Data Forwarder…',
+                                     'desc': '新しいフォワーダーを作成します。API '
+                                             'は、指定された設定を使用してフォワーダーが指定のストレージに書き込めるかどうかを確認するための呼び出しを行います。指定されたバケットまたはコンテナーの '
+                                             '`healthcheck` というサブフォルダーに、`healthcheck.json` '
+                                             'というテストメッセージの書き込みを試行します。バケットの設定に誤りがある場合 (例: 権限やプリンシパル ARN '
+                                             'の誤りなど)、または設定が正しくない場合 (例: バケットプレフィックスがポリシーで指定されたパスと一致しない)、API '
+                                             'は何が誤っているか、およびその修正方法に関する情報を含む `400` エラーを返します。Data Forwarder…',
                                      'path_params': [],
                                      'query_params': [],
                                      'body': {'name': 'Alert Forwarder',
                                               'enabled': True,
                                               'type': 'alert',
                                               'version_constraint': '3.0.*',
-                                              'destination_config': {'destination': 'aws_s3', 's3_bucket_name': 'demo-bucket', 's3_prefix': 'demo-alert'}},
-                                     'body_schema': ['`name` `string` *(required)* — Display name to assign to the new forwarder.',
-                                                     '`enabled` `boolean` — Whether to create the forwarder as enabled.',
-                                                     '`type` `string` *(required)* — The datastream type being forwarded. Each type determines the data stream '
-                                                     'and which features are available: - `alert`: Includes all alerts, such as Web Traffic, Behavior…',
-                                                     '`version_constraint` `string` — Semantic version pattern controlling which version of the data to '
-                                                     'forward. Defaults if omitted: alert=2.0.0, event=2.0.0, forensicquery=2.0.0. The major version must be…',
-                                                     '`destination_config` `oneOf` *(required)* — Destination-specific storage configuration. The required and '
-                                                     'permitted fields depend on the `destination` value. Supplying a field that belongs to a differe…']},
+                                              'destination_config': {'destination': 'aws_s3',
+                                                                     's3_bucket_name': 'demo-bucket',
+                                                                     's3_prefix': 'demo-alert'}},
+                                     'body_schema': ['`name` `string` *(必須)* — 新しいフォワーダーに割り当てる表示名。',
+                                                     '`enabled` `boolean` — フォワーダーを有効な状態で作成するかどうか。',
+                                                     '`type` `string` *(必須)* — '
+                                                     '転送するデータストリームの種類。種類ごとにデータストリームと利用可能な機能が決まります: - `alert`: Web '
+                                                     'Traffic、Behavior などのすべてのアラートを含みます…',
+                                                     '`version_constraint` `string` — '
+                                                     '転送するデータのバージョンを制御するセマンティックバージョンパターン。省略時のデフォルト: alert=2.0.0, '
+                                                     'event=2.0.0, forensicquery=2.0.0。メジャーバージョンは…である必要があります…',
+                                                     '`destination_config` `oneOf` *(必須)* — '
+                                                     '転送先固有のストレージ設定。必須および指定可能なフィールドは `destination` '
+                                                     'の値によって異なります。別の種類に属するフィールドを指定すると…']},
                                     {'method': 'GET',
                                      'path': '/common/data-forwarders/v3/configs/{id}',
-                                     'summary': 'Get a specific forwarder configuration',
+                                     'summary': '特定のフォワーダー設定の取得',
                                      'operation_id': 'getConfigById',
                                      'sku': '',
-                                     'desc': 'Returns the forwarder configuration with the specified ID. The config must belong to the environment of the '
-                                             'authenticated token; otherwise a `404 Not Found` is returned. Requires Data Forwarder `READ` permission.',
+                                     'desc': '指定された ID のフォワーダー設定を返します。設定は認証済みトークンの環境に属している必要があり、そうでない場合は `404 Not '
+                                             'Found` が返されます。Data Forwarder の `READ` 権限が必要です。',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'PUT',
                                      'path': '/common/data-forwarders/v3/configs/{id}',
-                                     'summary': 'Update a forwarder configuration',
+                                     'summary': 'フォワーダー設定の更新',
                                      'operation_id': 'updateConfig',
                                      'sku': '',
-                                     'desc': 'Replaces an existing forwarder configuration (full PUT — all fields required). The `type` (e.g. `event`, '
-                                             '`alert`) and `destination` (e.g. `aws_s3`, `azure_blob_storage`) are immutable after creation; supply their '
-                                             'current values unchanged or the request will be rejected with a `400`. All other fields — including bucket name, '
-                                             'prefix, storage account, and container — can be freely modified. When editing an existing forwarder, the API '
-                                             'will make additional calls to check whether the forwarder can write to the specified destination using the '
-                                             'configuration supplied. It will attempt to write a test me…',
+                                     'desc': '既存のフォワーダー設定を置き換えます (完全な PUT — すべてのフィールドが必須)。`type` (例: `event`, `alert`) '
+                                             'と `destination` (例: `aws_s3`, `azure_blob_storage`) '
+                                             'は作成後に変更できません。現在の値をそのまま指定しないと、リクエストは `400` で拒否されます。その他のフィールド '
+                                             '(バケット名、プレフィックス、ストレージアカウント、コンテナーを含む) は自由に変更できます。既存のフォワーダーを編集する場合、API '
+                                             'は指定された設定を使用してフォワーダーが指定の転送先に書き込めるかどうかを確認するための追加の呼び出しを行います。テストメッセージの書き込みを試行します…',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': {'name': 'DevRelTest',
                                               'enabled': False,
                                               'type': 'event',
                                               'version_constraint': '2.0.0',
-                                              'destination_config': {'destination': 'aws_s3', 's3_bucket_name': 'DevRelTestBucket', 's3_prefix': 'test'}},
-                                     'body_schema': ['`name` `string` *(required)* — Updated name for the forwarder.',
-                                                     '`enabled` `boolean` *(required)* — Whether the forwarder should be enabled.',
-                                                     '`type` `string` *(required)* — The datastream type being forwarded. Each type determines the data stream '
-                                                     'and which features are available: - `alert`: Includes all alerts, such as Web Traffic, Behavior…',
-                                                     '`version_constraint` `string` *(required)* — Updated semantic version pattern controlling which version '
-                                                     'of the data to forward. Valid forms: `N.N.N`, `N.N.*`, `N.*.*`.',
-                                                     '`destination_config` `oneOf` *(required)* — Destination-specific storage configuration. The required and '
-                                                     'permitted fields depend on the `destination` value. Supplying a field that belongs to a differe…']},
+                                              'destination_config': {'destination': 'aws_s3',
+                                                                     's3_bucket_name': 'DevRelTestBucket',
+                                                                     's3_prefix': 'test'}},
+                                     'body_schema': ['`name` `string` *(必須)* — フォワーダーの更新後の名前。',
+                                                     '`enabled` `boolean` *(必須)* — フォワーダーを有効にするかどうか。',
+                                                     '`type` `string` *(必須)* — '
+                                                     '転送するデータストリームの種類。種類ごとにデータストリームと利用可能な機能が決まります: - `alert`: Web '
+                                                     'Traffic、Behavior などのすべてのアラートを含みます…',
+                                                     '`version_constraint` `string` *(必須)* — '
+                                                     '転送するデータのバージョンを制御する、更新後のセマンティックバージョンパターン。有効な形式: `N.N.N`, `N.N.*`, '
+                                                     '`N.*.*`。',
+                                                     '`destination_config` `oneOf` *(必須)* — '
+                                                     '転送先固有のストレージ設定。必須および指定可能なフィールドは `destination` '
+                                                     'の値によって異なります。別の種類に属するフィールドを指定すると…']},
                                     {'method': 'DELETE',
                                      'path': '/common/data-forwarders/v3/configs/{id}',
-                                     'summary': 'Delete a forwarder configuration',
+                                     'summary': 'フォワーダー設定の削除',
                                      'operation_id': 'deleteConfig',
                                      'sku': '',
-                                     'desc': 'Permanently deletes a forwarder configuration by its ID. All associated filters are automatically deleted along '
-                                             'with the config. Data forwarding stops within approximately 1–2 minutes of deletion. Deletion is non-reversible; '
-                                             'deletion events are recorded in the audit log.',
+                                     'desc': 'フォワーダー設定を ID で指定して完全に削除します。関連付けられたすべてのフィルターも設定とともに自動的に削除されます。データ転送は削除後約 '
+                                             '1～2 分以内に停止します。削除は元に戻せません。削除イベントは監査ログに記録されます。',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'POST',
                                      'path': '/common/data-forwarders/v3/validate-filter',
-                                     'summary': 'Validate a filter',
+                                     'summary': 'フィルターの検証',
                                      'operation_id': 'validateFilter',
                                      'sku': '',
-                                     'desc': 'Validates whether a filter uses compatible query syntax, field names, and values. This endpoint does not create '
-                                             'or persist the filter — it only checks validity. Filters are only applicable to `event` forwarder types. To '
-                                             'ensure the query will be accepted at filter creation or update time, supply the same `version_constraint` value '
-                                             'as the target configuration. Validating against a different version than the config uses does not guarantee the '
-                                             'query will pass when the filter is created or updated. Requires Data Forwarder `MANAGE` permission.',
+                                     'desc': 'フィルターが互換性のあるクエリ構文、フィールド名、および値を使用しているかどうかを検証します。このエンドポイントはフィルターを作成または保存せず、有効性の確認のみを行います。フィルターは '
+                                             '`event` タイプのフォワーダーにのみ適用されます。フィルターの作成時または更新時にクエリが受け入れられるようにするには、対象の設定と同じ '
+                                             '`version_constraint` '
+                                             'の値を指定してください。設定で使用されているバージョンとは異なるバージョンに対して検証した場合、フィルターの作成時または更新時にクエリが通ることは保証されません。Data '
+                                             'Forwarder の `MANAGE` 権限が必要です。',
                                      'path_params': [],
                                      'query_params': [],
                                      'body': {'name': 'Example Filter',
@@ -1359,83 +1391,87 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                                               'enabled': True,
                                               'query': 'device_os:WINDOWS AND alert_id:*',
                                               'version_constraint': '2.0.0'},
-                                     'body_schema': ['`name` `string` *(required)* — Name for the filter being validated.',
-                                                     '`enabled` `boolean` — Whether the filter would be enabled.',
-                                                     '`action` `string` *(required)* — The action to validate: `INCLUDE` to forward matching events, `EXCLUDE` '
-                                                     'to drop them. (enum: `INCLUDE`, `EXCLUDE`)',
-                                                     '`query` `string` *(required)* — The query to validate against the specified schema version.',
-                                                     '`version_constraint` `string` — Schema version to validate the filter against. If not included, the API '
-                                                     'will validate against the lowest supported schema version (2.0.0). Valid forms: `N.N.N`, `N.N.*`…']},
+                                     'body_schema': ['`name` `string` *(必須)* — 検証対象のフィルターの名前。',
+                                                     '`enabled` `boolean` — フィルターを有効にするかどうか。',
+                                                     '`action` `string` *(必須)* — 検証するアクション。一致したイベントを転送する場合は '
+                                                     '`INCLUDE`、破棄する場合は `EXCLUDE` を指定します。(enum: `INCLUDE`, `EXCLUDE`)',
+                                                     '`query` `string` *(必須)* — 指定されたスキーマバージョンに対して検証するクエリ。',
+                                                     '`version_constraint` `string` — '
+                                                     'フィルターの検証に使用するスキーマバージョン。指定しない場合、API はサポートされている最も低いスキーマバージョン '
+                                                     '(2.0.0) に対して検証します。有効な形式: `N.N.N`, `N.N.*`…']},
                                     {'method': 'GET',
                                      'path': '/common/data-forwarders/v3/configs/{id}/health-check',
-                                     'summary': 'Run a health check for a forwarder configuration',
+                                     'summary': 'フォワーダー設定のヘルスチェックの実行',
                                      'operation_id': 'getHealthCheckByConfigId',
                                      'sku': '',
-                                     'desc': 'Runs a health check on a forwarder to determine if the forwarder is able to write to the specified S3 Bucket, '
-                                             'GCS Bucket, or Azure Container using the existing configuration. The health check can indicate if the bucket is '
-                                             'misconfigured (i.e. incorrect permissions, principal ARN, etc.), if the configuration is incorrect (i.e. bucket '
-                                             "prefix doesn't match path specified in policy), or if the forwarder is working as expected. If successful, the "
-                                             'health check will attempt to write a test message called `healthcheck.json` to the bucket under a subfolder '
-                                             'called `healthcheck` (or the Azure Container) a…',
+                                     'desc': 'フォワーダーのヘルスチェックを実行し、既存の設定を使用してフォワーダーが指定の S3 バケット、GCS バケット、または Azure '
+                                             'コンテナーに書き込めるかどうかを判定します。ヘルスチェックにより、バケットの設定に誤りがあるか (例: 権限やプリンシパル ARN '
+                                             'の誤りなど)、設定が正しくないか (例: '
+                                             'バケットプレフィックスがポリシーで指定されたパスと一致しない)、またはフォワーダーが想定どおりに動作しているかを確認できます。成功した場合、ヘルスチェックはバケットの '
+                                             '`healthcheck` というサブフォルダー (または Azure コンテナー) に `healthcheck.json` '
+                                             'というテストメッセージの書き込みを試行し…',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'GET',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters',
-                                     'summary': 'Get all filters for a configuration',
+                                     'summary': '設定のすべてのフィルターの取得',
                                      'operation_id': 'listFiltersByConfig',
                                      'sku': '',
-                                     'desc': 'Returns all filters for the specified forwarder configuration. A configuration supports a maximum of 25 filters. '
-                                             'Filters are only applicable to `event` forwarder types — calling this endpoint on an `alert`or `forensicquery` '
-                                             'config returns an empty array.',
+                                     'desc': '指定されたフォワーダー設定のすべてのフィルターを返します。1 つの設定でサポートされるフィルターは最大 25 個です。フィルターは '
+                                             '`event` タイプのフォワーダーにのみ適用されます。`alert` または `forensicquery` '
+                                             'の設定に対してこのエンドポイントを呼び出すと、空の配列が返されます。',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'POST',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters',
-                                     'summary': 'Create a filter for a configuration',
+                                     'summary': '設定のフィルターの作成',
                                      'operation_id': 'createFilter',
                                      'sku': '',
-                                     'desc': 'Creates a filter for the specified configuration to include or exclude data from being forwarded. Multiple '
-                                             'filters for the same config ID apply logical OR to support separated complex conditions. For example, two '
-                                             'include and two exclude filters would be applied as: `(IncludeFilter1 OR IncludeFilter2) AND NOT (ExcludeFilter1 '
-                                             'OR ExcludeFilter2)`. If you want to create multiple filters at once check out `bulk` or `bulk-overwrite` '
-                                             'endpoints. Filters are only applicable to `event` forwarder types. A configuration supports a maximum of 25 '
-                                             'filters. Attempting to create a filter when the limit has alr…',
+                                     'desc': '指定された設定に対して、データを転送対象に含めるか除外するかを指定するフィルターを作成します。同じ設定 ID に対する複数のフィルターには論理 '
+                                             'OR が適用され、分離された複雑な条件をサポートします。例えば、2 つの包含フィルターと 2 つの除外フィルターは '
+                                             '`(IncludeFilter1 OR IncludeFilter2) AND NOT (ExcludeFilter1 OR '
+                                             'ExcludeFilter2)` として適用されます。複数のフィルターを一度に作成する場合は、`bulk` または '
+                                             '`bulk-overwrite` エンドポイントを参照してください。フィルターは `event` タイプのフォワーダーにのみ適用されます。1 '
+                                             'つの設定でサポートされるフィルターは最大 25 個です。上限にすでに達している場合にフィルターを作成しようとすると…',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
-                                     'body': {'name': 'Example Filter', 'action': 'INCLUDE', 'enabled': True, 'query': 'device_os:WINDOWS AND alert_id:*'},
-                                     'body_schema': ['`name` `string` *(required)* — Display name to assign to the new filter.',
-                                                     '`enabled` `boolean` — Whether the filter is active on creation. Defaults to `true`.',
-                                                     '`action` `string` *(required)* — Determines whether matching events are forwarded (`INCLUDE`) or dropped '
-                                                     '(`EXCLUDE`). (enum: `INCLUDE`, `EXCLUDE`)',
-                                                     '`query` `string` *(required)* — The query to match against incoming data. A query cannot include fields '
-                                                     'from different event types since the Data Forwarder performs filtering on individual events.']},
+                                     'body': {'name': 'Example Filter',
+                                              'action': 'INCLUDE',
+                                              'enabled': True,
+                                              'query': 'device_os:WINDOWS AND alert_id:*'},
+                                     'body_schema': ['`name` `string` *(必須)* — 新しいフィルターに割り当てる表示名。',
+                                                     '`enabled` `boolean` — 作成時にフィルターを有効にするかどうか。デフォルトは `true` です。',
+                                                     '`action` `string` *(必須)* — 一致したイベントを転送する (`INCLUDE`) か破棄する '
+                                                     '(`EXCLUDE`) かを決定します。(enum: `INCLUDE`, `EXCLUDE`)',
+                                                     '`query` `string` *(必須)* — 受信データと照合するクエリ。Data Forwarder '
+                                                     'は個々のイベント単位でフィルタリングを行うため、クエリに異なるイベントタイプのフィールドを含めることはできません。']},
                                     {'method': 'POST',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters/bulk',
-                                     'summary': 'Bulk create or update filters for a configuration',
+                                     'summary': '設定のフィルターの一括作成または更新',
                                      'operation_id': 'bulkCreateOrUpdateFilters',
                                      'sku': '',
-                                     'desc': 'Creates or updates multiple filters for the specified configuration. The presence of an `id` field is the '
-                                             'differentiator between create and update — items with `id` are treated as updates, items without `id` are '
-                                             'treated as creates. Multiple filters for the same config ID apply logical OR to support separated complex '
-                                             'conditions: `(IncludeFilter1 OR IncludeFilter2) AND NOT (ExcludeFilter1 OR ExcludeFilter2)`. Due to backend '
-                                             'limitations, bulk requests are limited to a maximum of 25 total items to ensure atomicity. Filters are only '
-                                             'applicable to `event` forwarder types. Filter queries are validate…',
+                                     'desc': '指定された設定に対して複数のフィルターを作成または更新します。`id` フィールドの有無によって作成と更新が区別されます。`id` '
+                                             'を含む項目は更新、`id` を含まない項目は作成として扱われます。同じ設定 ID に対する複数のフィルターには論理 OR '
+                                             'が適用され、分離された複雑な条件をサポートします: `(IncludeFilter1 OR IncludeFilter2) AND NOT '
+                                             '(ExcludeFilter1 OR '
+                                             'ExcludeFilter2)`。バックエンドの制約により、アトミック性を確保するため、一括リクエストは合計最大 25 '
+                                             '項目に制限されます。フィルターは `event` タイプのフォワーダーにのみ適用されます。フィルタークエリは検証され…',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': [{'action': 'INCLUDE',
@@ -1443,133 +1479,138 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                                                'name': 'Example Filter',
                                                'query': 'device_os:LINUX AND alert_id:*',
                                                'id': 'f13e6723-7779-4fdc-a26e-5a95e66be891'},
-                                              {'action': 'EXCLUDE', 'enabled': True, 'name': 'Example EXCLUDE Filter', 'query': 'device_os:MAC'}],
+                                              {'action': 'EXCLUDE',
+                                               'enabled': True,
+                                               'name': 'Example EXCLUDE Filter',
+                                               'query': 'device_os:MAC'}],
                                      'body_schema': ['`[ ]` `array[any]`']},
                                     {'method': 'POST',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters/bulk-overwrite',
-                                     'summary': 'Bulk replace all filters for a configuration',
+                                     'summary': '設定のすべてのフィルターの一括置換',
                                      'operation_id': 'bulkReplaceFilters',
                                      'sku': '',
-                                     'desc': 'Replaces all existing filters for the specified configuration with the supplied set. Any previously existing '
-                                             'filters not included in the request body will be deleted. Due to backend limitations, bulk requests are limited '
-                                             'to a maximum of 25 total items to ensure atomicity. Filters are only applicable to `event` forwarder types. '
-                                             "Filter queries are validated against the target config's own `version_constraint` at write time — filters have "
-                                             'no `version_constraint` field of their own. To pre-validate queries before submitting, call `POST '
-                                             '/validate-filter` with the same `version_constraint` value as…',
+                                     'desc': '指定された設定の既存のフィルターをすべて、指定されたセットで置き換えます。リクエストボディに含まれていない既存のフィルターは削除されます。バックエンドの制約により、アトミック性を確保するため、一括リクエストは合計最大 '
+                                             '25 項目に制限されます。フィルターは `event` タイプのフォワーダーにのみ適用されます。フィルタークエリは書き込み時に対象の設定自身の '
+                                             '`version_constraint` に対して検証されます。フィルター自体には `version_constraint` '
+                                             'フィールドはありません。送信前にクエリを事前検証するには、…と同じ `version_constraint` の値を指定して `POST '
+                                             '/validate-filter` を呼び出します…',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'}],
                                      'query_params': [],
                                      'body': [{'name': 'Block Malicious Processes',
                                                'action': 'EXCLUDE',
                                                'query': 'process_reputation:1_KNOWN_BAD',
                                                'enabled': True},
-                                              {'name': 'Windows Events Only', 'action': 'INCLUDE', 'query': 'device_os:WINDOWS', 'enabled': True}],
+                                              {'name': 'Windows Events Only',
+                                               'action': 'INCLUDE',
+                                               'query': 'device_os:WINDOWS',
+                                               'enabled': True}],
                                      'body_schema': ['`[ ]` `array[any]`']},
                                     {'method': 'GET',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters/{filterId}',
-                                     'summary': 'Get a specific filter by ID',
+                                     'summary': '特定のフィルターの ID による取得',
                                      'operation_id': 'getFilterById',
                                      'sku': '',
-                                     'desc': 'Returns the filter with the specified ID for the given forwarder configuration. Returns `404` if either the '
-                                             'config or the filter is not found.',
+                                     'desc': '指定されたフォワーダー設定について、指定された ID のフィルターを返します。設定またはフィルターのいずれかが見つからない場合は `404` '
+                                             'を返します。',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'},
                                                      {'name': 'filterId',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the filter.',
+                                                      'desc': 'フィルターの一意の識別子。',
                                                       'sample': 'f13e6723-7779-4fdc-a26e-5a95e66be891'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'PUT',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters/{filterId}',
-                                     'summary': 'Update a filter',
+                                     'summary': 'フィルターの更新',
                                      'operation_id': 'updateFilter',
                                      'sku': '',
-                                     'desc': 'Replaces an existing filter (full PUT — all fields except `id` are required). The filter to update is identified '
-                                             'by the `filterId` path parameter. If an `id` field is included in the request body it is ignored; `create_time` '
-                                             'and `update_time` are always managed by the backend and are silently ignored if present in the body. Filters are '
-                                             "only applicable to `event` forwarder types. The updated query is validated against the target config's own "
-                                             '`version_constraint` — filters have no `version_constraint` field of their own. To pre-validate a query before '
-                                             'updating, call `POST /validate-filter` with…',
+                                     'desc': '既存のフィルターを置き換えます (完全な PUT — `id` 以外のすべてのフィールドが必須)。更新対象のフィルターは `filterId` '
+                                             'パスパラメーターで識別されます。リクエストボディに `id` フィールドが含まれていても無視されます。`create_time` と '
+                                             '`update_time` は常にバックエンドで管理され、ボディに含まれていても通知なしに無視されます。フィルターは `event` '
+                                             'タイプのフォワーダーにのみ適用されます。更新後のクエリは対象の設定自身の `version_constraint` '
+                                             'に対して検証されます。フィルター自体には `version_constraint` '
+                                             'フィールドはありません。更新前にクエリを事前検証するには、`POST /validate-filter` を…とともに呼び出します…',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'},
                                                      {'name': 'filterId',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the filter.',
+                                                      'desc': 'フィルターの一意の識別子。',
                                                       'sample': 'f13e6723-7779-4fdc-a26e-5a95e66be891'}],
                                      'query_params': [],
                                      'body': {'id': 'f13e6723-7779-4fdc-a26e-5a95e66be891',
                                               'name': 'Example Filter - Edited',
                                               'action': 'INCLUDE',
                                               'enabled': True,
-                                              'query': 'device_os:WINDOWS AND alert_id:* AND process_reputation:1_KNOWN_BAD'},
-                                     'body_schema': ['`id` `string` — Filter UUID. Optional — the server uses the `filterId` path parameter to identify the '
-                                                     'filter and silently overrides this value.',
-                                                     '`name` `string` *(required)* — Updated display name for the filter.',
-                                                     '`enabled` `boolean` *(required)* — Whether the filter should be active after the update.',
-                                                     '`action` `string` *(required)* — Whether the filter should include or exclude matching events. (enum: '
+                                              'query': 'device_os:WINDOWS AND alert_id:* AND '
+                                                       'process_reputation:1_KNOWN_BAD'},
+                                     'body_schema': ['`id` `string` — フィルターの UUID。任意指定です。サーバーは `filterId` '
+                                                     'パスパラメーターを使用してフィルターを識別し、この値を通知なしに上書きします。',
+                                                     '`name` `string` *(必須)* — フィルターの更新後の表示名。',
+                                                     '`enabled` `boolean` *(必須)* — 更新後にフィルターを有効にするかどうか。',
+                                                     '`action` `string` *(必須)* — 一致したイベントをフィルターで含めるか除外するか。(enum: '
                                                      '`INCLUDE`, `EXCLUDE`)',
-                                                     '`query` `string` *(required)* — Updated query to match against incoming data.']},
+                                                     '`query` `string` *(必須)* — 受信データと照合する更新後のクエリ。']},
                                     {'method': 'DELETE',
                                      'path': '/common/data-forwarders/v3/configs/{id}/filters/{filterId}',
-                                     'summary': 'Delete a filter',
+                                     'summary': 'フィルターの削除',
                                      'operation_id': 'deleteFilter',
                                      'sku': '',
-                                     'desc': 'Permanently deletes a filter from the specified forwarder configuration. Filters are only applicable to `event` '
-                                             'forwarder types. Requires Data Forwarder `MANAGE` permission.',
+                                     'desc': '指定されたフォワーダー設定からフィルターを完全に削除します。フィルターは `event` タイプのフォワーダーにのみ適用されます。Data '
+                                             'Forwarder の `MANAGE` 権限が必要です。',
                                      'path_params': [{'name': 'id',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the forwarder configuration.',
+                                                      'desc': 'フォワーダー設定の一意の識別子。',
                                                       'sample': '011b9d03-b12d-11ec-af42-ae26c44461dc'},
                                                      {'name': 'filterId',
                                                       'required': True,
-                                                      'desc': 'Unique identifier of the filter.',
+                                                      'desc': 'フィルターの一意の識別子。',
                                                       'sample': 'f13e6723-7779-4fdc-a26e-5a95e66be891'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'GET',
                                      'path': '/common/data-forwarders/v3/schemas/events',
-                                     'summary': 'Get the filterable event schema',
+                                     'summary': 'フィルタ可能なイベントスキーマの取得',
                                      'operation_id': 'getFilterableSchema',
                                      'sku': '',
-                                     'desc': 'Returns a JSON schema document describing filterable fields, their types, and available enum values for endpoint '
-                                             'events. When `version_constraint` is specified, the API returns all filterable fields available for that schema '
-                                             'version; if not specified, it returns filterable fields for the lowest supported schema version (2.0.0). This '
-                                             'endpoint is publicly accessible — no authentication token is required.',
+                                     'desc': 'エンドポイントイベントのフィルタ可能なフィールド、その型、および利用可能な enum 値を記述した JSON '
+                                             'スキーマドキュメントを返します。`version_constraint` を指定した場合、API '
+                                             'はそのスキーマバージョンで利用可能なすべてのフィルタ可能フィールドを返します。指定しない場合は、サポートされている最も低いスキーマバージョン（2.0.0）のフィルタ可能フィールドを返します。このエンドポイントは公開されており、認証トークンは不要です。',
                                      'path_params': [],
                                      'query_params': [{'name': 'version_constraint',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Schema version to retrieve filterable fields for (e.g. `2.0.0`, `2.1.0`, `2.2.0`). If not '
-                                                               'specified, the lowest supported schema version is used. Valid forms: `N.N.N`, `N.N.*`, '
-                                                               '`N.*.*`.',
+                                                       'desc': 'フィルタ可能フィールドを取得するスキーマバージョン（例: '
+                                                               '`2.0.0`、`2.1.0`、`2.2.0`）。指定しない場合は、サポートされている最も低いスキーマバージョンが使用されます。有効な形式: '
+                                                               '`N.N.N`、`N.N.*`、`N.*.*`。',
                                                        'sample': ''}],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'GET',
                                      'path': '/common/data-forwarders/v3/versions',
-                                     'summary': 'Get available forwarder versions',
+                                     'summary': '利用可能なフォワーダーバージョンの取得',
                                      'operation_id': 'getAvailableVersions',
                                      'sku': '',
-                                     'desc': 'Returns all available GA forwarder schema versions, optionally filtered by type. Versions are returned in '
-                                             'ascending order. Only released versions are included — deprecated versions are omitted. To select a '
-                                             '`version_constraint` for a new config, pick the latest version in the array for the relevant type. Requires Data '
-                                             'Forwarder `READ` permission.',
+                                     'desc': '利用可能なすべての GA '
+                                             'フォワーダースキーマバージョンを返します（任意でタイプによる絞り込みが可能）。バージョンは昇順で返されます。リリース済みのバージョンのみが含まれ、非推奨のバージョンは除外されます。新しい設定の '
+                                             '`version_constraint` を選択するには、該当するタイプの配列内で最新のバージョンを選んでください。Data Forwarder '
+                                             'の `READ` 権限が必要です。',
                                      'path_params': [],
                                      'query_params': [{'name': 'type',
                                                        'type': 'string',
                                                        'required': False,
                                                        'default': '',
-                                                       'desc': 'Forwarder type to filter by. When omitted, versions for all types are returned.',
+                                                       'desc': '絞り込みに使用するフォワーダーのタイプ。省略した場合は、すべてのタイプのバージョンが返されます。',
                                                        'sample': ''}],
                                      'body': None,
                                      'body_schema': []}]},
@@ -1577,27 +1618,30 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                      'permissions': ['Threat Intel -> Read'],
                      'endpoints': [{'method': 'GET',
                                     'path': '/common/threat-intel/v1/taxii2',
-                                    'summary': 'TAXII Server Discovery',
+                                    'summary': 'TAXII サーバーディスカバリー',
                                     'operation_id': 'getTAXII21Discovery',
                                     'sku': '',
-                                    'desc': 'Returns the TAXII server title, description, and the list of API root URLs. **Required permission:** '
-                                            '`ses_threat_intel_api_access` OAuth2 scope (or HTTP Basic Auth). Callers whose token lacks this scope receive a '
-                                            '403 Forbidden response. **cURL example:** `curl -u <client_id>:<client_secret> -H "Content-Type: '
-                                            'application/taxii+json;version=2.1" https://api.us.security.com/common/threat-intel/v1/taxii2`',
+                                    'desc': 'TAXII サーバーのタイトル、説明、および API ルート URL の一覧を返します。**必要な権限:** '
+                                            '`ses_threat_intel_api_access` OAuth2 スコープ（または HTTP Basic '
+                                            '認証）。トークンにこのスコープがない呼び出し元には 403 Forbidden レスポンスが返されます。**cURL の例:** `curl -u '
+                                            '<client_id>:<client_secret> -H "Content-Type: '
+                                            'application/taxii+json;version=2.1" '
+                                            'https://api.us.security.com/common/threat-intel/v1/taxii2`',
                                     'path_params': [],
                                     'query_params': [],
                                     'body': None,
                                     'body_schema': []},
                                    {'method': 'GET',
                                     'path': '/common/threat-intel/v1/taxii2/feeds/collections',
-                                    'summary': 'List Collections',
+                                    'summary': 'コレクション一覧の取得',
                                     'operation_id': 'listTAXII21Collections',
                                     'sku': '',
-                                    'desc': 'Returns the list of all available TAXII 2.1 data collections (Threat Intelligence feeds). All collections are '
-                                            'read-only. This endpoint returns the complete collection list in a single response; pagination is not supported. '
-                                            'The set of collections is currently fixed at three (`threat-alert`, `malicious-uri`, `malicious-file`). '
-                                            '**Required permission:** `ses_threat_intel_api_access` OAuth2 scope (or HTTP Basic Auth). Callers whose token '
-                                            'lacks this scope receive a 403 Forbidden response. **Python example:** `import requests; response = '
+                                    'desc': '利用可能なすべての TAXII 2.1 '
+                                            'データコレクション（脅威インテリジェンスフィード）の一覧を返します。すべてのコレクションは読み取り専用です。このエンドポイントはコレクションの完全な一覧を単一のレスポンスで返し、ページネーションはサポートされていません。コレクションのセットは現在 '
+                                            '3 つ（`threat-alert`、`malicious-uri`、`malicious-file`）に固定されています。**必要な権限:** '
+                                            '`ses_threat_intel_api_access` OAuth2 スコープ（または HTTP Basic '
+                                            '認証）。トークンにこのスコープがない呼び出し元には 403 Forbidden レスポンスが返されます。**Python の例:** '
+                                            '`import requests; response = '
                                             'requests.get("https://api.us.security.com/common/threat-intel/v…',
                                     'path_params': [],
                                     'query_params': [],
@@ -1605,36 +1649,35 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                                     'body_schema': []},
                                    {'method': 'GET',
                                     'path': '/common/threat-intel/v1/taxii2/feeds/collections/{collection_id}/objects',
-                                    'summary': 'Get Collection Objects (STIX 2.1 Bundle)',
+                                    'summary': 'コレクションオブジェクトの取得（STIX 2.1 Bundle）',
                                     'operation_id': 'getTAXII21Objects',
                                     'sku': '',
-                                    'desc': 'Returns a STIX 2.1 bundle for the collection. **Page size:** Each response contains at most **2000 STIX '
-                                            'objects**. This limit is server-enforced and fixed — there is no `limit` query parameter. Any `limit` value sent '
-                                            'by the client is silently ignored. **Bulk ingestion loop:** 1. Send the first request with only `added_after` '
-                                            '(omit `next`). 2. If the response contains `more: true`, send the next request with `next` set to the `next` '
-                                            'value from the response body. 3. Repeat until `more: false` or `next` is absent/null in the response — that '
-                                            'signals the final page. **`next` semantics:** The `next`…',
+                                    'desc': 'コレクションの STIX 2.1 バンドルを返します。**ページサイズ:** 各レスポンスに含まれる STIX オブジェクトは最大 **2000 '
+                                            '件** です。この上限はサーバー側で強制される固定値であり、`limit` クエリパラメータは存在しません。クライアントが送信した `limit` '
+                                            'の値は通知なく無視されます。**一括取り込みループ:** 1. 最初のリクエストは `added_after` '
+                                            'のみを指定して送信します（`next` は省略）。2. レスポンスに `more: true` が含まれる場合は、レスポンス本文の `next` '
+                                            'の値を `next` に設定して次のリクエストを送信します。3. レスポンスで `more: false` になるか、`next` '
+                                            'が存在しない/null になるまで繰り返します。これが最終ページであることを示します。**`next` のセマンティクス:** `next`…',
                                     'path_params': [{'name': 'collection_id',
                                                      'required': True,
-                                                     'desc': 'Name of the collection to retrieve objects from. Valid values: `threat-alert` (IoC bundle '
-                                                             'reports, ~1 new report/week); `malicious-uri` (high-confidence malicious URL/domain indicators, '
-                                                             '~few thousand/…',
+                                                     'desc': 'オブジェクトを取得するコレクションの名前。有効な値: `threat-alert`（IoC '
+                                                             'バンドルレポート、週あたり約 1 件の新規レポート）、`malicious-uri`（高信頼度の悪意ある '
+                                                             'URL/ドメインインジケーター、約数千件/…',
                                                      'sample': 'threat-alert'}],
                                     'query_params': [{'name': 'added_after',
                                                       'type': 'string',
                                                       'required': False,
                                                       'default': '',
-                                                      'desc': 'Return only objects added after this timestamp (ISO 8601 with microsecond precision, e.g. '
-                                                              '`2026-01-01T00:00:00.0000000Z`). If omitted, the server applies a rolling 30-day lookback from '
-                                                              'the time of the…',
+                                                      'desc': 'このタイムスタンプ以降に追加されたオブジェクトのみを返します（マイクロ秒精度の ISO 8601、例: '
+                                                              '`2026-01-01T00:00:00.0000000Z`）。省略した場合、サーバーは…の時点から過去 30 '
+                                                              '日間のローリング期間を適用します…',
                                                       'sample': ''},
                                                      {'name': 'next',
                                                       'type': 'string',
                                                       'required': False,
                                                       'default': '',
-                                                      'desc': 'Pagination cursor for the bulk ingestion loop. Omit on the first request. On subsequent '
-                                                              'requests, set this to the `next` value from the previous response — a 1-based record offset '
-                                                              'that advances by 200…',
+                                                      'desc': '一括取り込みループ用のページネーションカーソル。最初のリクエストでは省略します。後続のリクエストでは、前のレスポンスの '
+                                                              '`next` の値を設定します。これは 1 始まりのレコードオフセットで、200 ずつ増加…',
                                                       'sample': ''}],
                                     'body': None,
                                     'body_schema': []}]},
@@ -1642,56 +1685,59 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                         'permissions': ['Threat Intel -> Read'],
                         'endpoints': [{'method': 'GET',
                                        'path': '/common/threat-intel/v1/related/file/{file_sha256}',
-                                       'summary': 'This API provides related file or network information for a given file.',
+                                       'summary': '指定したファイルに関連するファイルまたはネットワーク情報を提供する API です。',
                                        'operation_id': 'listFileRelated',
                                        'sku': '',
-                                       'desc': 'Returns related file and network indicators for the given file SHA-256, including arrays of related network '
-                                               'indicators and related file SHA-256 values, each grouped by the relationship type (e.g. byThreatActor, '
-                                               'byProcessChain). Required permission: ses_threat_intel_api_access. Callers without this permission receive a '
-                                               '403 Forbidden response.',
+                                       'desc': '指定したファイルの SHA-256 '
+                                               'に関連するファイルおよびネットワークのインジケーターを返します。関連するネットワークインジケーターおよび関連ファイルの SHA-256 '
+                                               '値の配列が含まれ、それぞれ関連タイプ（例: byThreatActor、byProcessChain）ごとにグループ化されます。必要な権限: '
+                                               'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden '
+                                               'レスポンスが返されます。',
                                        'path_params': [{'name': 'file_sha256',
                                                         'required': True,
-                                                        'desc': 'SHA-256 hash of the file to look up',
+                                                        'desc': '検索対象ファイルの SHA-256 ハッシュ',
                                                         'sample': 'eec3f761f7eabe9ed569f39e896be24c9bbb8861b15dbde1b3d539505cd9dd8d'}],
                                        'query_params': [{'name': 'page',
                                                          'type': 'integer',
                                                          'required': False,
                                                          'default': '1',
-                                                         'desc': '1-indexed page number for paginating the related array (default: 1)',
+                                                         'desc': 'related 配列のページネーションに使用するページ番号（1 始まり、デフォルト: 1）',
                                                          'sample': ''},
                                                         {'name': 'page_size',
                                                          'type': 'integer',
                                                          'required': False,
                                                          'default': '50',
-                                                         'desc': 'Number of related groups to return per page (default: 50, max: 200)',
+                                                         'desc': '1 ページあたりに返す関連グループの数（デフォルト: 50、最大: 200）',
                                                          'sample': ''}],
                                        'body': None,
                                        'body_schema': []},
                                       {'method': 'GET',
                                        'path': '/common/threat-intel/v1/related/network/{network}',
-                                       'summary': 'This API provides related file or network information for a given network domain or IP address.',
+                                       'summary': '指定したネットワークドメインまたは IP アドレスに関連するファイルまたはネットワーク情報を提供する API です。',
                                        'operation_id': 'listNetworkRelated',
                                        'sku': '',
-                                       'desc': 'Returns related file and network indicators for the given network domain or IP address, including related IOC '
-                                               'values grouped by the relationship type (e.g. byThreatActor, bySignature). Required permission: '
-                                               'ses_threat_intel_api_access. Callers without this permission receive a 403 Forbidden response.',
+                                       'desc': '指定したネットワークドメインまたは IP アドレスに関連するファイルおよびネットワークのインジケーターを返します。関連する IOC '
+                                               '値は関連タイプ（例: byThreatActor、bySignature）ごとにグループ化されます。必要な権限: '
+                                               'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden '
+                                               'レスポンスが返されます。',
                                        'path_params': [{'name': 'network',
                                                         'required': True,
-                                                        'desc': 'Network indicator to look up. Accepted formats: FQDN (e.g. example.com, sub.example.com), '
-                                                                'full URL (scheme optional — domain is extracted and path is ignored), or public IPv4/IPv6 '
-                                                                'address. IPv6 may be…',
+                                                        'desc': '検索対象のネットワークインジケーター。受け付ける形式: FQDN（例: '
+                                                                'example.com、sub.example.com）、完全な '
+                                                                'URL（スキームは任意。ドメインが抽出され、パスは無視されます）、またはパブリック IPv4/IPv6 '
+                                                                'アドレス。IPv6 は…',
                                                         'sample': '145.249.105.165'}],
                                        'query_params': [{'name': 'page',
                                                          'type': 'integer',
                                                          'required': False,
                                                          'default': '1',
-                                                         'desc': '1-indexed page number for paginating the related array (default: 1)',
+                                                         'desc': 'related 配列のページネーションに使用するページ番号（1 始まり、デフォルト: 1）',
                                                          'sample': ''},
                                                         {'name': 'page_size',
                                                          'type': 'integer',
                                                          'required': False,
                                                          'default': '50',
-                                                         'desc': 'Number of related groups to return per page (default: 50, max: 200)',
+                                                         'desc': '1 ページあたりに返す関連グループの数（デフォルト: 50、最大: 200）',
                                                          'sample': ''}],
                                        'body': None,
                                        'body_schema': []}]},
@@ -1699,56 +1745,52 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                    'permissions': ['Threat Intel -> Read'],
                    'endpoints': [{'method': 'GET',
                                   'path': '/common/threat-intel/v1/insight/file/{file_sha256}',
-                                  'summary': 'This API returns file insight enrichments for given file sha256.',
+                                  'summary': '指定したファイルの sha256 に対するファイルインサイトのエンリッチメントを返す API です。',
                                   'operation_id': 'getFileInsight',
                                   'sku': '',
-                                  'desc': 'Returns threat intelligence enrichments for a given file SHA-256 hash, including reputation, confidence score, '
-                                          'prevalence band, targeted organisations, associated threat actors, and linked references. Required permission: '
-                                          'ses_threat_intel_api_access. Callers without this permission receive a 403 Forbidden response.',
+                                  'desc': '指定したファイルの SHA-256 '
+                                          'ハッシュに対する脅威インテリジェンスのエンリッチメントを返します。レピュテーション、信頼度スコア、普及度帯、標的となった組織、関連する脅威アクター、およびリンクされた参照情報が含まれます。必要な権限: '
+                                          'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                   'path_params': [{'name': 'file_sha256',
                                                    'required': True,
-                                                   'desc': 'SHA-256 hash of the file to look up',
+                                                   'desc': '検索対象ファイルの SHA-256 ハッシュ',
                                                    'sample': 'f6afa84b0847414220bb15517b8b5e2c505b64b53efbba73b753379c66ac5017'}],
                                   'query_params': [],
                                   'body': None,
                                   'body_schema': []},
                                  {'method': 'GET',
                                   'path': '/common/threat-intel/v1/insight/network',
-                                  'summary': 'This API returns network enrichments for given URL, domain or IP.',
+                                  'summary': '指定した URL、ドメイン、または IP に対するネットワークエンリッチメントを返す API です。',
                                   'operation_id': 'getNetworkInsight',
                                   'sku': '',
-                                  'desc': 'Returns threat intelligence enrichments for a given URL, domain, or IP address, including reputation, confidence '
-                                          'score, prevalence, categorisation, threat risk level, targeted organisations, and associated threat actors. '
-                                          'Required permission: ses_threat_intel_api_access. Callers without this permission receive a 403 Forbidden response.',
+                                  'desc': '指定した URL、ドメイン、または IP '
+                                          'アドレスに対する脅威インテリジェンスのエンリッチメントを返します。レピュテーション、信頼度スコア、普及度、カテゴリ分類、脅威リスクレベル、標的となった組織、および関連する脅威アクターが含まれます。必要な権限: '
+                                          'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                   'path_params': [],
                                   'query_params': [{'name': 'network',
                                                     'type': 'string',
                                                     'required': True,
                                                     'default': '',
-                                                    'desc': 'Full URL, domain name, or IP address to look up. [NOTE] This value is passed as a query parameter '
-                                                            "(not a path segment) because full URLs contain '/' characters that would otherwise break request "
-                                                            'routi…',
+                                                    'desc': "検索対象の完全な URL、ドメイン名、または IP アドレス。【注意】完全な URL には '/' "
+                                                            '文字が含まれ、パスセグメントとして渡すとリクエストのルーティングが壊れてしまうため、この値はパスセグメントではなくクエリパラメータとして渡されます…',
                                                     'sample': '115.55.57.208'}],
                                   'body': None,
                                   'body_schema': []},
                                  {'method': 'GET',
                                   'path': '/common/threat-intel/v1/insight/network/history',
-                                  'summary': 'This API returns categorization and risklevel history for given URL, domain or IP.',
+                                  'summary': '指定した URL、ドメイン、または IP のカテゴリ分類およびリスクレベルの履歴を返す API です。',
                                   'operation_id': 'listNetworkInsightHistory',
                                   'sku': '',
-                                  'desc': 'Returns the historical record of web content categorisation changes and threat risk level updates for a given URL, '
-                                          'domain, or IP. This endpoint is not paginated: the complete history for both the categorisation and threat risk '
-                                          'level arrays is returned in a single response, and the two arrays may naturally have different lengths since they '
-                                          'represent independent event streams. Required permission: ses_threat_intel_api_access. Callers without this '
-                                          'permission receive a 403 Forbidden response.',
+                                  'desc': '指定した URL、ドメイン、または IP について、Web '
+                                          'コンテンツのカテゴリ分類の変更および脅威リスクレベルの更新の履歴を返します。このエンドポイントはページネーションされません。カテゴリ分類と脅威リスクレベルの両配列の完全な履歴が単一のレスポンスで返されます。両配列は独立したイベントストリームを表すため、長さが異なる場合があります。必要な権限: '
+                                          'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                   'path_params': [],
                                   'query_params': [{'name': 'network',
                                                     'type': 'string',
                                                     'required': True,
                                                     'default': '',
-                                                    'desc': 'Full URL, domain name, or IP address to look up. [NOTE] This value is passed as a query parameter '
-                                                            "(not a path segment) because full URLs contain '/' characters that would otherwise break request "
-                                                            'routi…',
+                                                    'desc': "検索対象の完全な URL、ドメイン名、または IP アドレス。【注意】完全な URL には '/' "
+                                                            '文字が含まれ、パスセグメントとして渡すとリクエストのルーティングが壊れてしまうため、この値はパスセグメントではなくクエリパラメータとして渡されます…',
                                                     'sample': 'google.com'}],
                                   'body': None,
                                   'body_schema': []}]},
@@ -1756,32 +1798,33 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                          'permissions': ['Threat Intel -> Read'],
                          'endpoints': [{'method': 'GET',
                                         'path': '/common/threat-intel/v1/process-chain/file/{file_sha256}',
-                                        'summary': 'This API returns topK process lineage enrichment for the provided file sha256.',
+                                        'summary': '指定したファイルの sha256 に対する上位 K 件のプロセス系統エンリッチメントを返す API です。',
                                         'operation_id': 'listFileProcessChain',
                                         'sku': '',
-                                        'desc': 'Returns the top-K process lineage (parent–child process chain) enrichment for the given file SHA-256, showing '
-                                                'how the file is typically executed and which parent processes are associated with it. Required permission: '
-                                                'ses_threat_intel_api_access. Callers without this permission receive a 403 Forbidden response. To retrieve '
-                                                'all results: check `total_pages` in the response body and repeat the request incrementing `page` by 1 on each '
-                                                'call until `page` equals `total_pages`. Each page returns up to `page_size` entries (default 10, max 100).',
+                                        'desc': '指定したファイルの SHA-256 に対する上位 K '
+                                                '件のプロセス系統（親子プロセスチェーン）エンリッチメントを返し、そのファイルが通常どのように実行され、どの親プロセスと関連しているかを示します。必要な権限: '
+                                                'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden '
+                                                'レスポンスが返されます。すべての結果を取得するには、レスポンス本文の `total_pages` を確認し、`page` が '
+                                                '`total_pages` に等しくなるまで、呼び出しごとに `page` を 1 ずつ増やしてリクエストを繰り返します。各ページでは最大 '
+                                                '`page_size` 件（デフォルト 10、最大 100）のエントリが返されます。',
                                         'path_params': [{'name': 'file_sha256',
                                                          'required': True,
-                                                         'desc': 'SHA-256 hash of the file to look up',
+                                                         'desc': '検索対象ファイルの SHA-256 ハッシュ',
                                                          'sample': 'eec3f761f7eabe9ed569f39e896be24c9bbb8861b15dbde1b3d539505cd9dd8d'}],
                                         'query_params': [{'name': 'page_size',
                                                           'type': 'integer',
                                                           'required': False,
                                                           'default': '10',
-                                                          'desc': 'The number of top-K process chain entries to return in a given request. [NOTE] When this '
-                                                                  'field is not present, up to 10 entries are returned. The maximum number of entries '
-                                                                  'supported per request is 100…',
+                                                          'desc': '1 回のリクエストで返す上位 K '
+                                                                  '件のプロセスチェーンエントリの数。【注意】このフィールドが存在しない場合、最大 10 '
+                                                                  '件のエントリが返されます。1 回のリクエストでサポートされる最大エントリ数は 100…',
                                                           'sample': ''},
                                                          {'name': 'page',
                                                           'type': 'integer',
                                                           'required': False,
                                                           'default': '1',
-                                                          'desc': 'The page number to retrieve (1-indexed). [NOTE] When this field is not present, the first '
-                                                                  'page is returned.',
+                                                          'desc': '取得するページ番号（1 '
+                                                                  '始まり）。【注意】このフィールドが指定されていない場合は、最初のページが返されます。',
                                                           'sample': ''}],
                                         'body': None,
                                         'body_schema': []}]},
@@ -1789,45 +1832,45 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                       'permissions': ['Threat Intel -> Read'],
                       'endpoints': [{'method': 'GET',
                                      'path': '/common/threat-intel/v1/protection/file/{file_sha256}',
-                                     'summary': 'This API returns information whether a given file has been blocked by any Symantec technologies.',
+                                     'summary': '指定したファイルがいずれかの Symantec テクノロジーによってブロックされたかどうかの情報を返す API です。',
                                      'operation_id': 'getFileProtection',
                                      'sku': '',
-                                     'desc': 'Returns information about whether the given file (identified by SHA-256) has been blocked by any Symantec '
-                                             'security technology, including the technology name, the first definition set version that blocked it, and the '
-                                             'associated threat name. Required permission: ses_threat_intel_api_access. Callers without this permission '
-                                             'receive a 403 Forbidden response.',
+                                     'desc': '指定したファイル（SHA-256 で識別）がいずれかの Symantec '
+                                             'セキュリティテクノロジーによってブロックされたかどうかの情報を返します。テクノロジー名、最初にブロックした定義セットのバージョン、および関連する脅威名が含まれます。必要な権限: '
+                                             'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [{'name': 'file_sha256',
                                                       'required': True,
-                                                      'desc': 'SHA-256 hash of the file to look up',
+                                                      'desc': '検索対象ファイルの SHA-256 ハッシュ',
                                                       'sample': '9f660524a026bce8d83f9f701ac5aac3f645cd3d03ddd356c8217e424b52a7af'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'GET',
                                      'path': '/common/threat-intel/v1/protection/network/{network}',
-                                     'summary': 'This API returns information whether given domain has been blocked by any Symantec technologies.',
+                                     'summary': '指定したドメインがいずれかの Symantec テクノロジーによってブロックされたかどうかの情報を返す API です。',
                                      'operation_id': 'getNetworkProtection',
                                      'sku': '',
-                                     'desc': 'Returns information about whether the given network domain has been blocked by any Symantec security technology, '
-                                             'including the technology name, the first definition set version that blocked it, and the associated threat name. '
-                                             'Required permission: ses_threat_intel_api_access. Callers without this permission receive a 403 Forbidden '
-                                             'response.',
-                                     'path_params': [{'name': 'network', 'required': True, 'desc': 'Domain name to look up', 'sample': 'paste.ee'}],
+                                     'desc': '指定したネットワークドメインがいずれかの Symantec '
+                                             'セキュリティテクノロジーによってブロックされたかどうかの情報を返します。テクノロジー名、最初にブロックした定義セットのバージョン、および関連する脅威名が含まれます。必要な権限: '
+                                             'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
+                                     'path_params': [{'name': 'network',
+                                                      'required': True,
+                                                      'desc': '検索対象のドメイン名',
+                                                      'sample': 'paste.ee'}],
                                      'query_params': [],
                                      'body': None,
                                      'body_schema': []},
                                     {'method': 'GET',
                                      'path': '/common/threat-intel/v1/protection/cve/{cve}',
-                                     'summary': 'This API returns information whether a given CVE has been blocked by any Symantec technologies.',
+                                     'summary': '指定した CVE がいずれかの Symantec テクノロジーによってブロックされたかどうかの情報を返す API です。',
                                      'operation_id': 'getCveProtection',
                                      'sku': '',
-                                     'desc': 'Returns information about whether the given CVE vulnerability has been blocked by any Symantec security '
-                                             'technology, including the technology name, the first definition set version that blocked it, and the associated '
-                                             'threat name. Required permission: ses_threat_intel_api_access. Callers without this permission receive a 403 '
-                                             'Forbidden response.',
+                                     'desc': '指定した CVE 脆弱性がいずれかの Symantec '
+                                             'セキュリティテクノロジーによってブロックされたかどうかの情報を返します。テクノロジー名、最初にブロックした定義セットのバージョン、および関連する脅威名が含まれます。必要な権限: '
+                                             'ses_threat_intel_api_access。この権限を持たない呼び出し元には 403 Forbidden レスポンスが返されます。',
                                      'path_params': [{'name': 'cve',
                                                       'required': True,
-                                                      'desc': 'CVE identifier (e.g. CVE-2017-0038)',
+                                                      'desc': 'CVE 識別子（例: CVE-2017-0038）',
                                                       'sample': 'CVE-2017-0038'}],
                                      'query_params': [],
                                      'body': None,
@@ -1853,7 +1896,7 @@ def render_generic_api(module_key):
         if spec["permissions"]:
             st.markdown("**必要な権限:** " + " / ".join(f"`{p}`" for p in spec["permissions"]))
         if ep["body_schema"]:
-            st.markdown("**Request Body Schema:**")
+            st.markdown("**リクエストBody スキーマ:**")
             st.markdown("\n".join(f"- {line}" for line in ep["body_schema"]))
         st.caption(f"出典: {spec['doc']}")
 
@@ -1872,7 +1915,7 @@ def render_generic_api(module_key):
         has_array = any(q["type"] == "array" for q in qps)
         array_mode = "repeat"
         if has_array:
-            comma_default = any("comma-separated" in q["desc"] for q in qps if q["type"] == "array")
+            comma_default = any(("comma-separated" in q["desc"] or "カンマ区切り" in q["desc"]) for q in qps if q["type"] == "array")
             array_mode = st.radio("配列パラメータの送信形式",
                                   ["repeat", "comma"], index=1 if comma_default else 0, horizontal=True,
                                   format_func=lambda x: "繰り返し (a=1&a=2)" if x == "repeat" else "カンマ区切り (a=1,2)",
@@ -1921,230 +1964,318 @@ def render_generic_api(module_key):
 
 # --- 既存モジュールのエンドポイント一覧（cbx_*.md の一覧から生成） ---
 LEGACY_SPECS = {'Custom Detections': {'doc': 'cbx_custom_detection.md',
-                       'endpoints': [['POST', '/detect-respond/detection/v1/custom-detections/queries/_search', 'Search query sub-resources'],
-                                     ['POST', '/detect-respond/detection/v1/custom-detections/{detection_id}/queries', 'Create a query sub-resource'],
-                                     ['GET', '/detect-respond/detection/v1/custom-detections/{detection_id}/queries/{query_id}', 'Get a query sub-resource'],
-                                     ['PUT', '/detect-respond/detection/v1/custom-detections/{detection_id}/queries/{query_id}', 'Update a query sub-resource'],
-                                     ['DELETE',
+                       'endpoints': [('POST',
+                                      '/detect-respond/detection/v1/custom-detections/queries/_search',
+                                      'クエリサブリソースの検索'),
+                                     ('POST',
+                                      '/detect-respond/detection/v1/custom-detections/{detection_id}/queries',
+                                      'クエリサブリソースの作成'),
+                                     ('GET',
                                       '/detect-respond/detection/v1/custom-detections/{detection_id}/queries/{query_id}',
-                                      'Delete a query sub-resource'],
-                                     ['POST', '/detect-respond/detection/v1/custom-detections/_search', 'Search custom detections'],
-                                     ['POST', '/detect-respond/detection/v1/custom-detections', 'Create a custom detection'],
-                                     ['POST',
+                                      'クエリサブリソースの取得'),
+                                     ('PUT',
+                                      '/detect-respond/detection/v1/custom-detections/{detection_id}/queries/{query_id}',
+                                      'クエリサブリソースの更新'),
+                                     ('DELETE',
+                                      '/detect-respond/detection/v1/custom-detections/{detection_id}/queries/{query_id}',
+                                      'クエリサブリソースの削除'),
+                                     ('POST', '/detect-respond/detection/v1/custom-detections/_search', 'カスタム検出の検索'),
+                                     ('POST', '/detect-respond/detection/v1/custom-detections', 'カスタム検出の作成'),
+                                     ('POST',
                                       '/detect-respond/detection/v1/custom-detections/_import',
-                                      'Bulk import (create or append) custom detections with their queries'],
-                                     ['GET', '/detect-respond/detection/v1/custom-detections/{detection_id}', 'Get a custom detection'],
-                                     ['PUT', '/detect-respond/detection/v1/custom-detections/{detection_id}', 'Update a custom detection'],
-                                     ['DELETE', '/detect-respond/detection/v1/custom-detections/{detection_id}', 'Delete a custom detection'],
-                                     ['POST',
+                                      'カスタム検出とそのクエリの一括インポート（作成または追加）'),
+                                     ('GET',
+                                      '/detect-respond/detection/v1/custom-detections/{detection_id}',
+                                      'カスタム検出の取得'),
+                                     ('PUT',
+                                      '/detect-respond/detection/v1/custom-detections/{detection_id}',
+                                      'カスタム検出の更新'),
+                                     ('DELETE',
+                                      '/detect-respond/detection/v1/custom-detections/{detection_id}',
+                                      'カスタム検出の削除'),
+                                     ('POST',
                                       '/detect-respond/detection/v1/custom-detections/_bulk',
-                                      'Unified bulk operation on detections (DELETE or UPDATE)'],
-                                     ['POST',
+                                      '検出に対する統合一括操作（DELETE または UPDATE）'),
+                                     ('POST',
                                       '/detect-respond/detection/v1/custom-detections/{detection_id}/queries/_bulk',
-                                      'Unified bulk operation on queries (DELETE or MOVE)']]},
+                                      'クエリに対する統合一括操作（DELETE または MOVE）')]},
  'Device Query': {'doc': 'cbx_device_query.md',
-                  'endpoints': [['GET', '/detect-respond/device-query/v2/commands', 'List Device Query Commands.'],
-                                ['POST', '/detect-respond/device-query/v2/commands', 'Trigger a Device Query Command (Forensic or Artifact).'],
-                                ['GET', '/detect-respond/device-query/v2/commands/{commandId}', 'Get Device Query Command details by Id.'],
-                                ['DELETE', '/detect-respond/device-query/v2/commands/{commandId}', 'Delete Device Query Command by Id.'],
-                                ['PUT', '/detect-respond/device-query/v2/commands/{commandId}/cancel', 'Cancel a triggered Device Query Command.'],
-                                ['POST', '/detect-respond/device-query/v2/commands/{commandId}/results', 'Retrieve Device Query Results'],
-                                ['GET', '/detect-respond/device-query/v2/schedules', 'List Device Query Schedules with pagination and sorting.'],
-                                ['POST', '/detect-respond/device-query/v2/schedules', 'Create a new Device Query Schedule.'],
-                                ['DELETE', '/detect-respond/device-query/v2/schedules', 'Delete Device Query Schedules (Batch).'],
-                                ['GET', '/detect-respond/device-query/v2/schedules/{scheduleId}', 'Get details of a specific Device Query Schedule.'],
-                                ['PUT', '/detect-respond/device-query/v2/schedules/{scheduleId}', 'Update an existing Device Query Schedule.'],
-                                ['GET',
+                  'endpoints': [('GET', '/detect-respond/device-query/v2/commands', 'Device Query コマンドの一覧を取得します。'),
+                                ('POST',
+                                 '/detect-respond/device-query/v2/commands',
+                                 'Device Query コマンド（Forensic または Artifact）を実行します。'),
+                                ('GET',
+                                 '/detect-respond/device-query/v2/commands/{commandId}',
+                                 'ID を指定して Device Query コマンドの詳細を取得します。'),
+                                ('DELETE',
+                                 '/detect-respond/device-query/v2/commands/{commandId}',
+                                 'ID を指定して Device Query コマンドを削除します。'),
+                                ('PUT',
+                                 '/detect-respond/device-query/v2/commands/{commandId}/cancel',
+                                 '実行された Device Query コマンドをキャンセルします。'),
+                                ('POST',
+                                 '/detect-respond/device-query/v2/commands/{commandId}/results',
+                                 'Device Query 結果の取得'),
+                                ('GET',
+                                 '/detect-respond/device-query/v2/schedules',
+                                 'ページネーションとソートを指定して Device Query スケジュールの一覧を取得します。'),
+                                ('POST', '/detect-respond/device-query/v2/schedules', '新しい Device Query スケジュールを作成します。'),
+                                ('DELETE',
+                                 '/detect-respond/device-query/v2/schedules',
+                                 'Device Query スケジュールを削除します（一括）。'),
+                                ('GET',
+                                 '/detect-respond/device-query/v2/schedules/{scheduleId}',
+                                 '特定の Device Query スケジュールの詳細を取得します。'),
+                                ('PUT',
+                                 '/detect-respond/device-query/v2/schedules/{scheduleId}',
+                                 '既存の Device Query スケジュールを更新します。'),
+                                ('GET',
                                  '/detect-respond/device-query/v2/schedules/{scheduleId}/commands',
-                                 'List Device Query Commands for given schedule id with pagination and sorting.'],
-                                ['PUT', '/detect-respond/device-query/v2/schedules/{scheduleId}/stop', 'Stop a running Device Query Schedule.']]},
+                                 '指定したスケジュール ID の Device Query コマンドの一覧を、ページネーションとソートを指定して取得します。'),
+                                ('PUT',
+                                 '/detect-respond/device-query/v2/schedules/{scheduleId}/stop',
+                                 '実行中の Device Query スケジュールを停止します。')]},
  'Alerts & Threats': {'doc': 'cbx_alerts.md',
-                      'endpoints': [['GET', '/detect-respond/alerts/v8/threats/{threat_id}/notes', 'Get notes for a threat'],
-                                    ['POST', '/detect-respond/alerts/v8/threats/{threat_id}/notes', 'Create a threat-level note'],
-                                    ['DELETE', '/detect-respond/alerts/v8/threats/{threat_id}/notes/{id}', 'Delete a threat-level note'],
-                                    ['POST', '/detect-respond/alerts/v8/grouped_alerts/_facet', 'Facet alerts - grouped'],
-                                    ['POST',
+                      'endpoints': [('GET', '/detect-respond/alerts/v8/threats/{threat_id}/notes', '脅威のノートの取得'),
+                                    ('POST', '/detect-respond/alerts/v8/threats/{threat_id}/notes', '脅威レベルのノートの作成'),
+                                    ('DELETE',
+                                     '/detect-respond/alerts/v8/threats/{threat_id}/notes/{id}',
+                                     '脅威レベルのノートの削除'),
+                                    ('POST', '/detect-respond/alerts/v8/grouped_alerts/_facet', 'アラートのファセット - グループ化'),
+                                    ('POST',
                                      '/detect-respond/alerts/v8/grouped_alerts/_histogram',
-                                     'Get time-bucketed threat-group counts for charting and dashboards.'],
-                                    ['POST',
+                                     'グラフやダッシュボード用に、時間バケットごとの脅威グループ数を取得します。'),
+                                    ('POST',
                                      '/detect-respond/alerts/v8/grouped_alerts/_search',
-                                     'Search for Alerts using query, criteria and exclusion operators. Alerts are grouped by the requested group_by field. '
-                                     'Currently, only threat_id is available for grouping. The response schema varies by grouping field.'],
-                                    ['GET', '/detect-respond/alerts/v8/threats/{threat_id}/history', 'Get the actions taken on a Threat such as Notes added.'],
-                                    ['POST',
+                                     'クエリ、条件、および除外演算子を使用してアラートを検索します。アラートはリクエストで指定した group_by '
+                                     'フィールドでグループ化されます。現在、グループ化に使用できるのは threat_id のみです。レスポンススキーマはグループ化フィールドによって異なります。'),
+                                    ('GET',
+                                     '/detect-respond/alerts/v8/threats/{threat_id}/history',
+                                     '追加されたノートなど、脅威に対して実行されたアクションを取得します。'),
+                                    ('POST',
                                      '/detect-respond/alerts/v8/alerts/workflow',
-                                     'This is an async operation that updates all existing alerts that match the search criteria of the request.'],
-                                    ['POST',
+                                     'リクエストの検索条件に一致する既存のすべてのアラートを更新する非同期操作です。'),
+                                    ('POST',
                                      '/detect-respond/alerts/v8/alerts/threat/workflow/_criteria',
-                                     "Bulk update threats' workflow by ids, this is an async operation"],
-                                    ['GET', '/detect-respond/alerts/v8/alerts/{alert_id}/notes', 'Get notes for an alert'],
-                                    ['POST', '/detect-respond/alerts/v8/alerts/{alert_id}/notes', 'Create an alert-level note'],
-                                    ['PATCH', '/detect-respond/alerts/v8/alerts/{alert_id}/notes', 'Patch route to update the read_history of a customer note'],
-                                    ['PUT', '/detect-respond/alerts/v8/alerts/{alert_id}/notes/{id}', 'Update alert level customer note'],
-                                    ['DELETE', '/detect-respond/alerts/v8/alerts/{alert_id}/notes/{id}', 'Delete an alert-level note'],
-                                    ['GET', '/detect-respond/alerts/v8/threats/{threat_id}/tags', 'Get a list of tags based on threatId'],
-                                    ['POST', '/detect-respond/alerts/v8/threats/{threat_id}/tags', 'Add tags to the threat id'],
-                                    ['DELETE',
+                                     'ID を指定して脅威のワークフローを一括更新します（非同期操作）'),
+                                    ('GET', '/detect-respond/alerts/v8/alerts/{alert_id}/notes', 'アラートのノートの取得'),
+                                    ('POST', '/detect-respond/alerts/v8/alerts/{alert_id}/notes', 'アラートレベルのノートの作成'),
+                                    ('PATCH',
+                                     '/detect-respond/alerts/v8/alerts/{alert_id}/notes',
+                                     '顧客ノートの read_history を更新する Patch ルート'),
+                                    ('PUT',
+                                     '/detect-respond/alerts/v8/alerts/{alert_id}/notes/{id}',
+                                     'アラートレベルの顧客ノートの更新'),
+                                    ('DELETE',
+                                     '/detect-respond/alerts/v8/alerts/{alert_id}/notes/{id}',
+                                     'アラートレベルのノートの削除'),
+                                    ('GET',
+                                     '/detect-respond/alerts/v8/threats/{threat_id}/tags',
+                                     'threatId に基づいてタグ一覧を取得します。'),
+                                    ('POST', '/detect-respond/alerts/v8/threats/{threat_id}/tags', '脅威 ID にタグを追加します。'),
+                                    ('DELETE',
                                      '/detect-respond/alerts/v8/threats/{threat_id}/tags/{tag}',
-                                     'Delete a tag so it is no longer associated with the given threat ID'],
-                                    ['POST',
+                                     '指定した脅威 ID との関連付けを解除するため、タグを削除します。'),
+                                    ('POST',
                                      '/detect-respond/alerts/v8/alerts/_export',
-                                     'Export Alerts in csv format. This is an asynchronous request which enables up to 25,000 records to be exported in each '
-                                     'request. Use the Export Alerts endpoint defined here to create a job with required search criteria to…'],
-                                    ['POST', '/detect-respond/alerts/v8/alerts/_facet', 'Facet alerts - ungrouped'],
-                                    ['POST', '/detect-respond/alerts/v8/alerts/_histogram', 'Get time-bucketed alert counts for charting and dashboards.'],
-                                    ['POST', '/detect-respond/alerts/v8/alerts/_search', 'Search for alerts using query, criteria and exclusion operators.'],
-                                    ['POST',
+                                     'アラートを CSV 形式でエクスポートします。これは非同期リクエストであり、1 回のリクエストで最大 25,000 '
+                                     '件のレコードをエクスポートできます。ここで定義されている Export Alerts エンドポイントを使用して、必要な検索条件を指定したジョブを作成し…'),
+                                    ('POST', '/detect-respond/alerts/v8/alerts/_facet', 'アラートのファセット（グループ化なし）'),
+                                    ('POST',
+                                     '/detect-respond/alerts/v8/alerts/_histogram',
+                                     'チャートやダッシュボード向けに、時間バケットごとのアラート件数を取得します。'),
+                                    ('POST',
+                                     '/detect-respond/alerts/v8/alerts/_search',
+                                     'クエリ、条件、および除外演算子を使用してアラートを検索します。'),
+                                    ('POST',
                                      '/detect-respond/alerts/v8/alerts/_validate',
-                                     'Verifies that the search is valid and returns error messages if not.'],
-                                    ['GET', '/detect-respond/alerts/v8/alerts/search_suggestions', 'Get recommendations of fields to use in a search.'],
-                                    ['GET', '/detect-respond/alerts/v8/alerts/{alert_id}', 'Get the details of an alert by ID'],
-                                    ['GET',
+                                     '検索が有効かどうかを検証し、無効な場合はエラーメッセージを返します。'),
+                                    ('GET',
+                                     '/detect-respond/alerts/v8/alerts/search_suggestions',
+                                     '検索で使用するフィールドの推奨候補を取得します。'),
+                                    ('GET', '/detect-respond/alerts/v8/alerts/{alert_id}', 'ID を指定してアラートの詳細を取得します。'),
+                                    ('GET',
                                      '/detect-respond/alerts/v8/alerts/{alert_id}/history',
-                                     'Get the actions taken on an Alert such as Notes added and workflow state changes. The history route does not include the '
-                                     'current state details of the alert.']]},
+                                     '追加されたメモやワークフロー状態の変更など、アラートに対して実行されたアクションを取得します。history '
+                                     'ルートには、アラートの現在の状態の詳細は含まれません。')]},
  'Jobs & Export': {'doc': 'cbx_jobs.md',
-                   'endpoints': [['GET', '/detect-respond/jobs/v4/jobs/{job_id}/download', 'Download job output'],
-                                 ['GET', '/detect-respond/jobs/v4/jobs/{job_id}', 'Get the details of a specific job'],
-                                 ['POST', '/detect-respond/jobs/v4/event_export', 'Start event export job']]},
+                   'endpoints': [('GET', '/detect-respond/jobs/v4/jobs/{job_id}/download', 'ジョブ出力のダウンロード'),
+                                 ('GET', '/detect-respond/jobs/v4/jobs/{job_id}', '特定のジョブの詳細を取得します。'),
+                                 ('POST', '/detect-respond/jobs/v4/event_export', 'イベントエクスポートジョブの開始')]},
  'Live Response': {'doc': 'cbx_live_response.md',
-                   'endpoints': [['GET', '/detect-respond/live-response/v7/sessions', 'Get all live response sessions'],
-                                 ['POST', '/detect-respond/live-response/v7/sessions', 'Create a Live Response session'],
-                                 ['GET', '/detect-respond/live-response/v7/sessions/{session_id}', 'Retrieve a Live Response session'],
-                                 ['DELETE', '/detect-respond/live-response/v7/sessions/{session_id}', 'Close a Live Response session'],
-                                 ['GET', '/detect-respond/live-response/v7/sessions/{session_id}/files', 'Get all files for a session'],
-                                 ['POST', '/detect-respond/live-response/v7/sessions/{session_id}/files', 'Upload a file to a session'],
-                                 ['GET', '/detect-respond/live-response/v7/sessions/{session_id}/files/{file_id}', 'Get a file object by ID'],
-                                 ['DELETE', '/detect-respond/live-response/v7/sessions/{session_id}/files/{file_id}', 'Delete a file from a session'],
-                                 ['GET', '/detect-respond/live-response/v7/sessions/{session_id}/files/{file_id}/content', 'Download file content'],
-                                 ['GET', '/detect-respond/live-response/v7/sessions/{session_id}/commands', 'Get all commands for a session'],
-                                 ['POST', '/detect-respond/live-response/v7/sessions/{session_id}/commands', 'Queue a Live Response command'],
-                                 ['GET',
+                   'endpoints': [('GET',
+                                  '/detect-respond/live-response/v7/sessions',
+                                  'すべての Live Response セッションを取得します。'),
+                                 ('POST', '/detect-respond/live-response/v7/sessions', 'Live Response セッションの作成'),
+                                 ('GET',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}',
+                                  'Live Response セッションの取得'),
+                                 ('DELETE',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}',
+                                  'Live Response セッションのクローズ'),
+                                 ('GET',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/files',
+                                  'セッションのすべてのファイルを取得します。'),
+                                 ('POST',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/files',
+                                  'セッションへのファイルのアップロード'),
+                                 ('GET',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/files/{file_id}',
+                                  'ID を指定してファイルオブジェクトを取得します。'),
+                                 ('DELETE',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/files/{file_id}',
+                                  'セッションからのファイルの削除'),
+                                 ('GET',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/files/{file_id}/content',
+                                  'ファイルコンテンツのダウンロード'),
+                                 ('GET',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/commands',
+                                  'セッションのすべてのコマンドを取得します。'),
+                                 ('POST',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/commands',
+                                  'Live Response コマンドをキューに追加します。'),
+                                 ('GET',
                                   '/detect-respond/live-response/v7/sessions/{session_id}/commands/{command_id}',
-                                  'Retrieve a Live Response command by ID'],
-                                 ['DELETE', '/detect-respond/live-response/v7/sessions/{session_id}/commands/{command_id}', 'Cancel a Live Response command']]},
+                                  'ID を指定して Live Response コマンドを取得します。'),
+                                 ('DELETE',
+                                  '/detect-respond/live-response/v7/sessions/{session_id}/commands/{command_id}',
+                                  'Live Response コマンドのキャンセル')]},
  'Notifications': {'doc': 'cbx_notifications.md',
-                   'endpoints': [['GET', '/detect-respond/notifications/v2/rules', 'Fetch notification rules'],
-                                 ['POST', '/detect-respond/notifications/v2/rules', 'Create notification rule'],
-                                 ['PUT', '/detect-respond/notifications/v2/rules/{ruleId}', 'Update the details of a rule by ID'],
-                                 ['DELETE', '/detect-respond/notifications/v2/rules/{ruleId}', 'Delete rule by ID'],
-                                 ['POST', '/detect-respond/notifications/v2/history/_search', 'Fetch notification history for a specific rule']]},
+                   'endpoints': [('GET', '/detect-respond/notifications/v2/rules', '通知ルールを取得します。'),
+                                 ('POST', '/detect-respond/notifications/v2/rules', '通知ルールの作成'),
+                                 ('PUT', '/detect-respond/notifications/v2/rules/{ruleId}', 'ID を指定してルールの詳細を更新します。'),
+                                 ('DELETE', '/detect-respond/notifications/v2/rules/{ruleId}', 'ID を指定してルールを削除します。'),
+                                 ('POST', '/detect-respond/notifications/v2/history/_search', '特定のルールの通知履歴を取得します。')]},
  'Policy Management': {'doc': 'cbx_policy_management.md',
-                       'endpoints': [['POST',
+                       'endpoints': [('POST',
                                       '/common/policy-management/v2/policies/copy',
-                                      'This API lets you copy workspace policies to another environment.'],
-                                     ['GET', '/common/policy-management/v2/policies', 'This API lets you retrieve a list of your policies.'],
-                                     ['PUT', '/common/policy-management/v2/policies', 'This API lets you update policy configurations.'],
-                                     ['POST', '/common/policy-management/v2/policies', 'This API lets you create a policy.'],
-                                     ['DELETE', '/common/policy-management/v2/policies/{policy-id}', 'This API lets you delete a policy.'],
-                                     ['GET',
+                                      'この API を使用すると、ワークスペースのポリシーを別の環境にコピーできます。'),
+                                     ('GET', '/common/policy-management/v2/policies', 'この API を使用すると、ポリシーの一覧を取得できます。'),
+                                     ('PUT', '/common/policy-management/v2/policies', 'この API を使用すると、ポリシー設定を更新できます。'),
+                                     ('POST', '/common/policy-management/v2/policies', 'この API を使用すると、ポリシーを作成できます。'),
+                                     ('DELETE',
+                                      '/common/policy-management/v2/policies/{policy-id}',
+                                      'この API を使用すると、ポリシーを削除できます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/{policy-id}/versions/{policy-version}',
-                                      'This API lets you retrieve the details for a policy by id and version.'],
-                                     ['GET',
+                                      'この API を使用すると、ID とバージョンを指定してポリシーの詳細を取得できます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/{policy-id}/versions',
-                                      'This API lets you retrieve the versions of a policy.'],
-                                     ['PATCH',
+                                      'この API を使用すると、ポリシーのバージョン一覧を取得できます。'),
+                                     ('PATCH',
                                       '/common/policy-management/v2/policies/allow-list/{policy-id}/versions/{policy-version}',
-                                      'This API lets you perform a partial update of the Allow list policy.'],
-                                     ['PUT',
+                                      'この API を使用すると、許可リストポリシーを部分更新できます。'),
+                                     ('PUT',
                                       '/common/policy-management/v2/policies/allow-list/{policy-id}/versions/{policy-version}',
-                                      'This API lets you perform update of Allow list policy.'],
-                                     ['PATCH',
+                                      'この API を使用すると、許可リストポリシーを更新できます。'),
+                                     ('PATCH',
                                       '/common/policy-management/v2/policies/deny-list/{policy-id}/versions/{policy-version}',
-                                      'This API lets you perform partial update of Deny list policy.'],
-                                     ['PUT',
+                                      'この API を使用すると、拒否リストポリシーを部分更新できます。'),
+                                     ('PUT',
                                       '/common/policy-management/v2/policies/deny-list/{policy-id}/versions/{policy-version}',
-                                      'This API lets you perform update of Deny list policy.'],
-                                     ['GET',
+                                      'この API を使用すると、拒否リストポリシーを更新できます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/device-groups/{group-id}/policies',
-                                      'This API lets you retrieve a list of policies assigned to the device group.'],
-                                     ['POST',
+                                      'この API を使用すると、デバイスグループに割り当てられたポリシーの一覧を取得できます。'),
+                                     ('POST',
                                       '/common/policy-management/v2/policies/{policy-id}/versions/{policy-version}/device-groups',
-                                      'This API lets you apply a policy to device groups.'],
-                                     ['DELETE',
+                                      'この API を使用すると、デバイスグループにポリシーを適用できます。'),
+                                     ('DELETE',
                                       '/common/policy-management/v2/policies/{policy-id}/versions/{policy-version}/device-groups',
-                                      'This API lets you remove a policy from device groups.'],
-                                     ['GET',
+                                      'この API を使用すると、デバイスグループからポリシーを削除できます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/export/{export-id}/status',
-                                      'This API lets you check the status of a policy export operation.'],
-                                     ['POST', '/common/policy-management/v2/policies/export/all', 'This API lets you export all policies.'],
-                                     ['POST',
+                                      'この API を使用すると、ポリシーのエクスポート処理のステータスを確認できます。'),
+                                     ('POST',
+                                      '/common/policy-management/v2/policies/export/all',
+                                      'この API を使用すると、すべてのポリシーをエクスポートできます。'),
+                                     ('POST',
                                       '/common/policy-management/v2/policies/export/types',
-                                      'This API lets you export policies filtered by policy types.'],
-                                     ['POST',
+                                      'この API を使用すると、ポリシータイプで絞り込んだポリシーをエクスポートできます。'),
+                                     ('POST',
                                       '/common/policy-management/v2/policies/export/names',
-                                      'This API lets you export policies filtered by policy names.'],
-                                     ['POST', '/common/policy-management/v2/policies/import', 'This API lets you import policies from a file.'],
-                                     ['GET',
+                                      'この API を使用すると、ポリシー名で絞り込んだポリシーをエクスポートできます。'),
+                                     ('POST',
+                                      '/common/policy-management/v2/policies/import',
+                                      'この API を使用すると、ファイルからポリシーをインポートできます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/import/{import-id}/status',
-                                      'This API lets you check the status of a policy import operation.'],
-                                     ['POST', '/common/policy-management/v2/policies/target-rules/export/all', 'This API lets you export all target rules.'],
-                                     ['POST',
+                                      'この API を使用すると、ポリシーのインポート処理のステータスを確認できます。'),
+                                     ('POST',
+                                      '/common/policy-management/v2/policies/target-rules/export/all',
+                                      'この API を使用すると、すべてのターゲットルールをエクスポートできます。'),
+                                     ('POST',
                                       '/common/policy-management/v2/policies/target-rules/export/names',
-                                      'This API lets you export target rules by names.'],
-                                     ['GET',
+                                      'この API を使用すると、名前を指定してターゲットルールをエクスポートできます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/target-rules/export/{export-id}/status',
-                                      'This API lets you check the status of a target rule export operation.'],
-                                     ['POST',
+                                      'この API を使用すると、ターゲットルールのエクスポート処理のステータスを確認できます。'),
+                                     ('POST',
                                       '/common/policy-management/v2/policies/target-rules/import',
-                                      'This API lets you import target rules from a file.'],
-                                     ['GET',
+                                      'この API を使用すると、ファイルからターゲットルールをインポートできます。'),
+                                     ('GET',
                                       '/common/policy-management/v2/policies/target-rules/import/{import-id}/status',
-                                      'This API lets you check the status of a target rule import operation.'],
-                                     ['GET', '/common/policy-management/v2/policies/target-rules', 'This API lets you retrieve a list of target rules.']]},
+                                      'この API を使用すると、ターゲットルールのインポート処理のステータスを確認できます。'),
+                                     ('GET',
+                                      '/common/policy-management/v2/policies/target-rules',
+                                      'この API を使用すると、ターゲットルールの一覧を取得できます。')]},
  'Script Deobfuscation': {'doc': 'cbx_script_deob.md',
-                          'endpoints': [['POST', '/detect-respond/script-deobfuscation/v3/reveal', 'Deobfuscate an obfuscated PowerShell script']]},
+                          'endpoints': [('POST',
+                                         '/detect-respond/script-deobfuscation/v3/reveal',
+                                         '難読化された PowerShell スクリプトの難読化解除')]},
  'Threat Intel': {'doc': 'cbx_taxii11.md',
-                  'endpoints': [['POST', '/common/threat-intel/v1/taxii11/discovery', 'TAXII Discovery'],
-                                ['POST', '/common/threat-intel/v1/taxii11/collection-management', 'TAXII Collection Management'],
-                                ['POST', '/common/threat-intel/v1/taxii11/poll', 'TAXII Poll – retrieve STIX CTI feed']]},
+                  'endpoints': [('POST', '/common/threat-intel/v1/taxii11/discovery', 'TAXII Discovery'),
+                                ('POST', '/common/threat-intel/v1/taxii11/collection-management', 'TAXII コレクション管理'),
+                                ('POST', '/common/threat-intel/v1/taxii11/poll', 'TAXII Poll – STIX CTI フィードの取得')]},
  'Vulnerability Assessment': {'doc': 'cbx_vuln_assessment.md',
-                              'endpoints': [['GET',
+                              'endpoints': [('GET',
                                              '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary',
-                                             'Get organization vulnerability summary rollup'],
-                                            ['POST',
+                                             '組織の脆弱性サマリーのロールアップを取得します。'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/summary/_search',
-                                             'Search vulnerable devices for organization'],
-                                            ['POST',
+                                             '組織内の脆弱なデバイスの検索'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/summary/_facets',
-                                             'Get filter facets for vulnerable devices'],
-                                            ['POST',
+                                             '脆弱なデバイスのフィルターファセットを取得します。'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/summary/export',
-                                             'Export vulnerable devices list as CSV'],
-                                            ['POST',
+                                             '脆弱なデバイス一覧の CSV エクスポート'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/_search',
-                                             'Search vulnerabilities across organization'],
-                                            ['POST',
+                                             '組織全体の脆弱性の検索'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/_facets',
-                                             'Get filter facets for vulnerabilities'],
-                                            ['POST',
+                                             '脆弱性のフィルターファセットを取得します。'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/export',
-                                             'Export vulnerabilities list as CSV'],
-                                            ['GET', '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve_id}', 'Get vulnerability details'],
-                                            ['GET',
+                                             '脆弱性一覧の CSV エクスポート'),
+                                            ('GET',
+                                             '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve_id}',
+                                             '脆弱性の詳細を取得します。'),
+                                            ('GET',
                                              '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve_id}/summary',
-                                             'Get CVE flyout summary'],
-                                            ['POST',
+                                             'CVE フライアウトのサマリーを取得します。'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve_id}/devices',
-                                             'Search devices affected by specific CVE'],
-                                            ['POST',
+                                             '特定の CVE の影響を受けるデバイスの検索'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve_id}/software/_search',
-                                             'List vulnerable software configurations for a specific CVE'],
-                                            ['POST',
+                                             '特定の CVE に対して脆弱なソフトウェア構成の一覧'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve_id}/actions',
-                                             'Perform action on vulnerability'],
-                                            ['GET',
+                                             '脆弱性に対するアクションの実行'),
+                                            ('GET',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/{device_uid}/vulnerabilities/summary',
-                                             'Get vulnerability summary for device'],
-                                            ['POST',
+                                             'デバイスの脆弱性サマリーを取得します。'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/{device_uid}/vulnerabilities/_search',
-                                             'Search vulnerabilities on device'],
-                                            ['POST',
+                                             'デバイス上の脆弱性の検索'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/{device_uid}/vulnerabilities/export',
-                                             'Export device vulnerabilities list as CSV'],
-                                            ['POST',
+                                             'デバイスの脆弱性一覧の CSV エクスポート'),
+                                            ('POST',
                                              '/endpoint-security/vulnerability/assessment/v3/devices/{device_uid}/device-actions',
-                                             'Perform action on device']]}}
+                                             'デバイスに対するアクションの実行')]}}
 
 def legacy_endpoint_select(key, hand_ops):
     """既存テンプレートのエンドポイント + mdに記載のある残りのエンドポイントを選択肢にする"""
@@ -2261,6 +2392,7 @@ st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント�
 module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
+        "🔑 Authentication (OAuth 2.0)",
         "📁 File Inventory",
         "🔍 Events",
         "🎯 Custom Detections",
