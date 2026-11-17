@@ -2345,29 +2345,33 @@ TAXII11_HEADERS = {
 st.sidebar.title("⚡ CBX Control Panel")
 st.sidebar.markdown("---")
 
-api_token = st.sidebar.text_input(
-    "OAuth Bearer / Basic Token",
-    value=st.session_state.get("issued_token", DEFAULT_TOKEN),  # 認証ページで取得したトークンがあれば反映
-    type="password"
-)
+DEFAULT_CLIENT_ID = "O2ID.Wvm1L9TARwOZWTzEBBjW0w.f6G8r9xHSViswGMHCd_fMQ.5kmeqpql54af3rqv6kk4bgh2c0"
+DEFAULT_CLIENT_SECRET = "1e99ho0cgl7bc0bklnhebi6ndh8vduvg2i0r"
 
-client_cred = st.sidebar.text_input(
-    "OAuth Client Credentials（Basic / Base64）※トークン取得・TAXII用",
-    value="",
-    type="password"
-)
-
+sb_client_id = st.sidebar.text_input("Client ID", value=DEFAULT_CLIENT_ID)
+sb_client_secret = st.sidebar.text_input("Client Secret", value=DEFAULT_CLIENT_SECRET, type="password")
 server_url = st.sidebar.text_input(
     "Server Base URL",
     value="https://api.us.security.com"
 )
 
+# Basic 認証値（client_id:client_secret の Base64）… トークン取得・TAXII 1.1 で使用
+client_cred = (base64.b64encode(f"{sb_client_id.strip()}:{sb_client_secret.strip()}".encode("utf-8")).decode("ascii")
+               if sb_client_id.strip() and sb_client_secret.strip() else "")
+
+# 以降すべての操作で使う Bearer トークン（認証ページの『グローバル適用』で設定）
+api_token = st.session_state.get("global_token") or DEFAULT_TOKEN
+
 c_id, d_id = extract_jwt_claims(api_token)
 st.sidebar.markdown("---")
+if st.session_state.get("global_token"):
+    st.sidebar.success("🌐 取得したトークンをグローバル適用中")
+else:
+    st.sidebar.info("トークン未適用（既定トークンを使用中）。🔑 Authentication ページで『グローバル適用』を押してください。")
 st.sidebar.markdown(f"**Auto-detected Customer ID:** `{c_id or 'N/A'}`")
 st.sidebar.markdown(f"**Auto-detected Domain ID:** `{d_id or 'N/A'}`")
 
-st.session_state["cbx_token"] = api_token if api_token else DEFAULT_TOKEN
+st.session_state["cbx_token"] = api_token
 st.session_state["server_url"] = server_url
 
 # Initialize execution state
@@ -2432,12 +2436,18 @@ with st.container():
             st.markdown(f"**送信先:** `{server_url.rstrip('/')}{t_endpoint}`（サイドバーの Server Base URL）")
 
             cred_mode = st.radio("認証情報の入力方法",
-                                 ["Basic 文字列（Step 1 でコピーした値）", "Client ID + Client Secret（自動で Base64 化）"],
-                                 key="auth_cred_mode")
-            if cred_mode.startswith("Basic"):
+                                 ["Client ID + Client Secret（自動で Base64 化）", "Basic 文字列（Step 1 でコピーした値）"],
+                                 index=0, key="auth_cred_mode")
+            if cred_mode.startswith("Client ID"):
+                basic_b64 = client_cred
+                if basic_b64:
+                    st.caption(f"サイドバーの Client ID / Client Secret を Base64 化して使用します（client_id = `{sb_client_id.strip()}`）。")
+                else:
+                    st.warning("サイドバーの Client ID と Client Secret を入力してください。")
+            else:
                 basic_in = st.text_input("authorization: Basic (base64_encoded_client_credential)",
-                                         value=client_cred, type="password", key="auth_basic_str",
-                                         help="コンソールでコピーした Basic 文字列（Base64）。先頭の『Basic 』は有っても無くても可。既定値はサイドバーの Client Credentials。")
+                                         value="", type="password", key="auth_basic_str",
+                                         help="コンソールでコピーした Basic 文字列（Base64）。先頭の『Basic 』は有っても無くても可。")
                 basic_b64 = basic_in.strip()
                 if basic_b64.lower().startswith("basic "):
                     basic_b64 = basic_b64[6:].strip()
@@ -2450,14 +2460,8 @@ with st.container():
                             st.caption(f"✔ デコード確認: client_id = `{_dec.split(':', 1)[0]}`")
                     except Exception:
                         st.warning("Base64 として解析できません。コピーした値を確認してください。")
-            else:
-                a_cid = st.text_input("Client ID", value="", key="auth_client_id")
-                a_csec = st.text_input("Client Secret", value="", type="password", key="auth_client_secret")
-                basic_b64 = base64.b64encode(f"{a_cid.strip()}:{a_csec.strip()}".encode("utf-8")).decode("ascii") if (a_cid.strip() and a_csec.strip()) else ""
-                if not basic_b64:
-                    st.info("Client ID と Client Secret を入力すると『client_id:client_secret』を Base64 化して使用します。")
-            if not basic_b64:
-                st.warning("認証情報（Basic 文字列）が未入力です。")
+                else:
+                    st.warning("Basic 文字列が未入力です。")
 
             grant_type = st.text_input("grant_type (--data)", value="client_credentials", key="auth_grant_type")
             scope = st.text_input("scope (--data)", value="domain", key="auth_scope")
@@ -2466,10 +2470,10 @@ with st.container():
             t_auth = "Basic"
             t_ctype = "application/x-www-form-urlencoded"
             t_headers = {"accept": accept_h} if accept_h.strip() else {}
-            t_basic = basic_b64  # 実行ボックスの Basic 認証に使用（サイドバー値より優先）
+            t_basic = basic_b64  # 実行ボックスの Basic 認証に使用
 
-            # その場でトークンを取得してサイドバーに反映
-            if st.button("🔑 トークンを取得してサイドバーに反映する", use_container_width=True, disabled=not basic_b64):
+            def _request_token():
+                """トークンを生成し、session_state['pending_token'] に保存"""
                 try:
                     _r = requests.post(f"{server_url.rstrip('/')}{t_endpoint}",
                                        headers={"accept": accept_h or "application/json",
@@ -2481,20 +2485,43 @@ with st.container():
                     except ValueError:
                         _j = {"raw": _r.text}
                     _tok = _j.get("access_token") if isinstance(_j, dict) else None
-                    st.session_state["auth_last_result"] = {"status": _r.status_code, "body": _j}
+                    _body = {k: (f"{v[:12]}…（非表示）" if k == "access_token" else v) for k, v in _j.items()} if isinstance(_j, dict) else _j
+                    st.session_state["auth_last_result"] = {"status": _r.status_code, "ok": bool(_r.ok and _tok), "body": _body}
                     if _r.ok and _tok:
-                        st.session_state["issued_token"] = _tok
-                        st.session_state["auth_last_result"]["body"] = {k: (v if k != "access_token" else f"{v[:12]}…（サイドバーに反映済み）") for k, v in _j.items()}
-                        st.rerun()
+                        st.session_state["pending_token"] = _tok
+                        return _tok
                 except Exception as e:
-                    st.session_state["auth_last_result"] = {"status": None, "body": {"error": str(e)}}
+                    st.session_state["auth_last_result"] = {"status": None, "ok": False, "body": {"error": str(e)}}
+                return None
+
+            b_col1, b_col2 = st.columns([1, 1])
+            with b_col1:
+                if st.button("🔑 トークンを生成", use_container_width=True, disabled=not basic_b64):
+                    _request_token()
+            with b_col2:
+                if st.button("🌐 グローバル適用", use_container_width=True, type="primary", disabled=not basic_b64,
+                             help="生成したトークンを以降すべての操作（実行ボックス・各API）の Bearer トークンとして使用します。未生成の場合は生成してから適用します。"):
+                    _tok = st.session_state.get("pending_token") or _request_token()
+                    if _tok:
+                        st.session_state["global_token"] = _tok
+                        st.session_state["exec_auth"] = "Bearer"
+                        st.session_state["auth_applied_msg"] = True
+                        st.rerun()
+
             _last = st.session_state.get("auth_last_result")
             if _last:
-                if _last["status"] and 200 <= _last["status"] < 300 and "issued_token" in st.session_state:
-                    st.success(f"Status {_last['status']}: トークンを取得し、サイドバーの Token に反映しました。")
+                if _last["ok"]:
+                    st.success(f"Status {_last['status']}: トークンを生成しました。")
                 else:
-                    st.error(f"トークン取得に失敗しました（Status: {_last['status']}）")
+                    st.error(f"トークン生成に失敗しました（Status: {_last['status']}）")
                 st.json(_last["body"])
+            if st.session_state.get("global_token"):
+                if st.session_state.get("pending_token") and st.session_state["pending_token"] != st.session_state["global_token"]:
+                    st.info("新しく生成したトークンはまだ適用されていません。『🌐 グローバル適用』を押すと切り替わります。")
+                if st.session_state.pop("auth_applied_msg", False):
+                    st.success("🌐 トークンをグローバル適用しました。以降すべての操作でこのトークンを使用します。")
+                else:
+                    st.caption("🌐 現在、生成したトークンをグローバル適用中です。")
 
         elif module_choice in API_SPECS:
             # Devices / Device Groups / Device Commands / Reporting / Data Forwarder / Threat Intel 各API（汎用テストページ）
@@ -2822,7 +2849,7 @@ with st.container():
             t_auth = "Basic"
             t_ctype = "application/xml"
             t_headers = dict(TAXII11_HEADERS)
-            st.caption("認証: サイドバーの『OAuth Client Credentials (Basic)』（client_id:client_secret の Base64）を使用します。")
+            st.caption("認証: サイドバーの Client ID + Client Secret（client_id:client_secret の Base64）による Basic 認証を使用します。")
             st.caption("※ md には Body の定義がないため、TAXII 1.1 標準のメッセージ形式（XML）で生成しています。")
             msg_id = st.text_input("message_id", value="1")
             if t_endpoint.endswith("/discovery"):
@@ -2913,7 +2940,7 @@ with st.container():
         auth_list = ["Bearer", "Basic", "なし"]
         curr_a = st.session_state["exec_auth"]
         auth_mode = st.selectbox("認証方式", auth_list, index=auth_list.index(curr_a) if curr_a in auth_list else 0,
-                                 help="Bearer: サイドバーのトークン / Basic: サイドバーの Client Credentials")
+                                 help="Bearer: グローバル適用したトークン / Basic: サイドバーの Client ID + Client Secret")
     with ex_a2:
         ctype_list = ["application/json", "application/x-www-form-urlencoded", "application/xml", "application/taxii+json;version=2.1"]
         curr_c = st.session_state["exec_ctype"]
@@ -2931,7 +2958,7 @@ with st.container():
     elif auth_mode == "Basic":
         _cred = (st.session_state.get("exec_basic") or client_cred).strip()
         if not _cred:
-            st.warning("Basic 認証情報が未入力です（認証ページ または サイドバーの『OAuth Client Credentials』）。")
+            st.warning("Basic 認証情報が未入力です（サイドバーの Client ID / Client Secret を入力してください）。")
         headers_preview["Authorization"] = _cred if _cred.startswith("Basic ") else f"Basic {_cred}"
     headers_preview["content-type"] = ctype
     if extra_headers_txt.strip():
@@ -3049,7 +3076,11 @@ with st.container():
                 res_tab1, res_tab2 = st.tabs(["Response Body", "Response Headers"])
                 with res_tab1:
                     try:
-                        st.json(resp.json())
+                        _rj = resp.json()
+                        if isinstance(_rj, dict) and _rj.get("access_token") and "/oauth2/tokens" in endpoint and resp.ok:
+                            st.session_state["pending_token"] = _rj["access_token"]
+                            st.info("トークンを取得しました。🔑 Authentication ページの『🌐 グローバル適用』で以降すべての操作に適用できます。")
+                        st.json(_rj)
                     except Exception:
                         st.text(resp.text)
                 with res_tab2:
