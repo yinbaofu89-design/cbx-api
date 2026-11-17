@@ -2453,6 +2453,28 @@ DASH_CSS = """
 def _flag_img(cc):
     return f'<img class="flag" src="https://flagcdn.com/w40/{cc}.png" onerror="this.style.display=\'none\'">' if cc else ""
 
+_HEX_RE = re.compile(r"^[0-9a-fA-F]+$")
+_IPV4_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
+
+def classify_ioc(ioc_type, value):
+    """関連 IOC を照会可能な種別に分類: 'file'（SHA-256）/ 'network'（ドメイン・URL・IP）/ None（照会不可）
+    Data Related の ioc_type だけでは判断せず値の形式も確認する（例: 24桁 hex は network でも照会不可）"""
+    v = str(value or "").strip()
+    if not v:
+        return None
+    if len(v) == 64 and _HEX_RE.match(v):
+        return "file"
+    if _HEX_RE.match(v):  # MD5 / SHA-1 / 内部 ID などの hex → Insight / Related では照会できない
+        return None
+    host = re.sub(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", "", v).split("/")[0].strip("[]")
+    if _IPV4_RE.match(host):
+        return "network"
+    if ":" in host and all(_HEX_RE.match(x) or x == "" for x in host.split(":")):
+        return "network"  # IPv6
+    if "." in host and re.match(r"^[A-Za-z0-9.-]+(:\d+)?$", host) and re.search(r"[A-Za-z]", host.rsplit(".", 1)[-1]):
+        return "network"  # FQDN（TLD に英字を含む）
+    return None
+
 def net_path(v):
     """ネットワーク IOC をパスに埋め込む（md: URL エンコードしない。'/' ':' はそのまま、空白等のみエンコード）"""
     return quote(str(v).strip(), safe=":/[]@!$&'()*+,;=-._~")
@@ -3083,7 +3105,7 @@ def render_dash_attack():
                 if c2_ == 200:
                     for g in rel.get("related") or []:
                         data["related"].append({"from": ioc, **g})
-                        out += [(g.get("ioc_type") or "file", v) for v in g.get("ioc_values") or []]
+                        out += [(g.get("ioc_type") or "", v) for v in g.get("ioc_values") or []]
                 else:
                     data["errs"].append(f"related {kind} {ioc[:24]}: Status {c2_} {str(rel)[:150]}")
                 return out
@@ -3094,8 +3116,14 @@ def render_dash_attack():
                 for n_ in nets:
                     nxt += look("network", n_)
                 if expand:
-                    for kind, ioc in nxt[: int(max_exp)]:
-                        look("file" if kind == "file" else "network", ioc)
+                    _cands, _skipped = [], []
+                    for kind, ioc in dict.fromkeys(nxt):
+                        k2 = classify_ioc(kind, ioc)
+                        (_cands if k2 else _skipped).append((k2 or kind, ioc))
+                    for k2, ioc in _cands[: int(max_exp)]:
+                        look(k2, ioc)
+                    if _skipped:
+                        data["skipped"] = list(dict.fromkeys(f"{k}: {v}" for k, v in _skipped))
                 if chain_related:  # 関連 IOC として見つかったファイルの Process Chain も取得
                     for kind, ioc in nxt:
                         if kind == "file" and re.fullmatch(r"[0-9a-fA-F]{64}", ioc or ""):
@@ -3118,6 +3146,9 @@ def render_dash_attack():
         data = st.session_state["da_data"]
         for e in data.get("errs", []):
             st.error(e)
+        if data.get("skipped"):
+            st.info(f"照会できない形式の関連 IOC {len(data['skipped'])} 件は、グラフには表示しますが追加照会はしていません"
+                    f"（SHA-256 以外のハッシュ / ID など）: " + ", ".join(data["skipped"][:10]) + (" …" if len(data["skipped"]) > 10 else ""))
         if data.get("at"):
             st.caption(f"解析時刻: {data['at']}")
     else:
@@ -3146,7 +3177,7 @@ def render_dash_attack():
     for r in data["related"]:
         add(r["from"], "file" if len(r["from"]) == 64 and r["from"].isalnum() else "network", short(r["from"]))
         for v in r.get("ioc_values") or []:
-            t = "file" if (r.get("ioc_type") == "file") else "network"
+            t = classify_ioc(r.get("ioc_type"), v) or ("file" if r.get("ioc_type") == "file" else "network")
             links.append({"source": r["from"], "target": add(v, t, short(v)), "rel": r.get("relation", "")})
     for c in data["chains"]:
         p, ch = c.get("parent") or {}, c.get("child") or {}
