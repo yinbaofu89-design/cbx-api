@@ -226,7 +226,7 @@ with st.container():
 
     with col_in2:
         st.markdown("**生成されるプレビュー (URL / データ):**")
-        preview_text = f"Endpoint: {t_endpoint}
+        preview_text = f"Endpoint: {t_endpoint}"
 Method: {t_method}
 Data:
 {json.dumps(t_data, indent=2)}"
