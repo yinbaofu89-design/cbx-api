@@ -2347,7 +2347,7 @@ st.sidebar.markdown("---")
 
 api_token = st.sidebar.text_input(
     "OAuth Bearer / Basic Token",
-    value=DEFAULT_TOKEN,
+    value=st.session_state.get("issued_token", DEFAULT_TOKEN),  # 認証ページで取得したトークンがあれば反映
     type="password"
 )
 
@@ -2420,6 +2420,7 @@ with st.container():
     t_auth = "Bearer"                 # Bearer / Basic
     t_ctype = "application/json"      # Content-Type
     t_headers = {}                    # 追加ヘッダー
+    t_basic = ""                      # Basic 認証値（空ならサイドバーの Client Credentials を使用）
 
     col_in1, col_in2 = st.columns([1, 1])
 
@@ -2427,13 +2428,73 @@ with st.container():
         if "Authentication" in module_choice:
             op = st.selectbox("Endpoint", ["POST /common/v1/oauth2/tokens"])
             t_method, t_endpoint = op.split(" ", 1)
-            grant_type = st.text_input("grant_type", value="client_credentials")
-            scope = st.text_input("scope", value="domain")
+            st.caption("cbx_auth.md / Method 2: Get the Token in the API — Step 1 でコピーした OAuth Client Secret（Basic 文字列）を authorization ヘッダーに指定し、フォーム形式で送信します。")
+            st.markdown(f"**送信先:** `{server_url.rstrip('/')}{t_endpoint}`（サイドバーの Server Base URL）")
+
+            cred_mode = st.radio("認証情報の入力方法",
+                                 ["Basic 文字列（Step 1 でコピーした値）", "Client ID + Client Secret（自動で Base64 化）"],
+                                 key="auth_cred_mode")
+            if cred_mode.startswith("Basic"):
+                basic_in = st.text_input("authorization: Basic (base64_encoded_client_credential)",
+                                         value=client_cred, type="password", key="auth_basic_str",
+                                         help="コンソールでコピーした Basic 文字列（Base64）。先頭の『Basic 』は有っても無くても可。既定値はサイドバーの Client Credentials。")
+                basic_b64 = basic_in.strip()
+                if basic_b64.lower().startswith("basic "):
+                    basic_b64 = basic_b64[6:].strip()
+                if basic_b64:
+                    try:
+                        _dec = base64.b64decode(basic_b64, validate=True).decode("utf-8")
+                        if ":" not in _dec:
+                            st.warning("Base64 のデコード結果に『:』がありません（client_id:client_secret 形式ではない可能性があります）。")
+                        else:
+                            st.caption(f"✔ デコード確認: client_id = `{_dec.split(':', 1)[0]}`")
+                    except Exception:
+                        st.warning("Base64 として解析できません。コピーした値を確認してください。")
+            else:
+                a_cid = st.text_input("Client ID", value="", key="auth_client_id")
+                a_csec = st.text_input("Client Secret", value="", type="password", key="auth_client_secret")
+                basic_b64 = base64.b64encode(f"{a_cid.strip()}:{a_csec.strip()}".encode("utf-8")).decode("ascii") if (a_cid.strip() and a_csec.strip()) else ""
+                if not basic_b64:
+                    st.info("Client ID と Client Secret を入力すると『client_id:client_secret』を Base64 化して使用します。")
+            if not basic_b64:
+                st.warning("認証情報（Basic 文字列）が未入力です。")
+
+            grant_type = st.text_input("grant_type (--data)", value="client_credentials", key="auth_grant_type")
+            scope = st.text_input("scope (--data)", value="domain", key="auth_scope")
+            accept_h = st.text_input("accept ヘッダー", value="application/json", key="auth_accept")
             t_data = {"grant_type": grant_type, "scope": scope}
-            # cbx_auth.md: Basic 認証（Client Credentials）+ application/x-www-form-urlencoded
             t_auth = "Basic"
             t_ctype = "application/x-www-form-urlencoded"
-            st.caption("認証: サイドバーの『OAuth Client Credentials (Basic)』を使用し、フォーム形式で送信します。")
+            t_headers = {"accept": accept_h} if accept_h.strip() else {}
+            t_basic = basic_b64  # 実行ボックスの Basic 認証に使用（サイドバー値より優先）
+
+            # その場でトークンを取得してサイドバーに反映
+            if st.button("🔑 トークンを取得してサイドバーに反映する", use_container_width=True, disabled=not basic_b64):
+                try:
+                    _r = requests.post(f"{server_url.rstrip('/')}{t_endpoint}",
+                                       headers={"accept": accept_h or "application/json",
+                                                "authorization": f"Basic {basic_b64}",
+                                                "content-type": "application/x-www-form-urlencoded"},
+                                       data=t_data, timeout=30)
+                    try:
+                        _j = _r.json()
+                    except ValueError:
+                        _j = {"raw": _r.text}
+                    _tok = _j.get("access_token") if isinstance(_j, dict) else None
+                    st.session_state["auth_last_result"] = {"status": _r.status_code, "body": _j}
+                    if _r.ok and _tok:
+                        st.session_state["issued_token"] = _tok
+                        st.session_state["auth_last_result"]["body"] = {k: (v if k != "access_token" else f"{v[:12]}…（サイドバーに反映済み）") for k, v in _j.items()}
+                        st.rerun()
+                except Exception as e:
+                    st.session_state["auth_last_result"] = {"status": None, "body": {"error": str(e)}}
+            _last = st.session_state.get("auth_last_result")
+            if _last:
+                if _last["status"] and 200 <= _last["status"] < 300 and "issued_token" in st.session_state:
+                    st.success(f"Status {_last['status']}: トークンを取得し、サイドバーの Token に反映しました。")
+                else:
+                    st.error(f"トークン取得に失敗しました（Status: {_last['status']}）")
+                st.json(_last["body"])
 
         elif module_choice in API_SPECS:
             # Devices / Device Groups / Device Commands / Reporting / Data Forwarder / Threat Intel 各API（汎用テストページ）
@@ -2812,6 +2873,7 @@ Data:
             st.session_state["exec_auth"] = t_auth
             st.session_state["exec_ctype"] = t_ctype
             st.session_state["exec_extra_headers"] = json.dumps(t_headers, indent=2) if t_headers else ""
+            st.session_state["exec_basic"] = t_basic
             st.rerun()
 
 st.markdown("---")
@@ -2867,9 +2929,9 @@ with st.container():
         else:
             headers_preview["Authorization"] = f"Bearer {_tok}"
     elif auth_mode == "Basic":
-        _cred = client_cred.strip()
+        _cred = (st.session_state.get("exec_basic") or client_cred).strip()
         if not _cred:
-            st.warning("サイドバーの『OAuth Client Credentials (Basic)』が未入力です。")
+            st.warning("Basic 認証情報が未入力です（認証ページ または サイドバーの『OAuth Client Credentials』）。")
         headers_preview["Authorization"] = _cred if _cred.startswith("Basic ") else f"Basic {_cred}"
     headers_preview["content-type"] = ctype
     if extra_headers_txt.strip():
