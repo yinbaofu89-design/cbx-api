@@ -68,15 +68,30 @@ server_url = st.sidebar.selectbox(
 )
 
 st.sidebar.markdown("---")
+st.sidebar.subheader("🏢 Tenant / Customer Context")
+customer_id = st.sidebar.text_input(
+    "customer_id",
+    value="",
+    help="リクエストのDataに含める customer_id"
+)
+domain_id = st.sidebar.text_input(
+    "domain_id",
+    value="",
+    help="リクエストのDataに含める domain_id"
+)
+
+st.sidebar.markdown("---")
 st.sidebar.info("""
 💡 **使用ガイド**
-1. 画面上部でトークンが正しく設定されているか確認します。
+1. 画面上部でトークン、customer_id、domain_idを設定します。
 2. 左メニューでカテゴリを選択し、各API機能にアクセスします。
-3. パラメータを入力後、「Execute Request」を実行すると実際のcURL・HTTPリクエストとレスポンスが生成されます。
+3. リクエスト送信時、設定された ID が自動的にリクエストのData（JSONまたはフォーム）に統合されます。
 """)
 
-# Store token in Session State
+# Store values in Session State
 st.session_state["cbx_token"] = api_token if api_token else DEFAULT_TOKEN
+st.session_state["customer_id"] = customer_id
+st.session_state["domain_id"] = domain_id
 
 # Helper function to perform API requests and render request/response UI
 def make_api_request(method, endpoint, headers=None, data=None, json_payload=None, params=None):
@@ -90,12 +105,38 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
     # Add Authorization Header if not provided
     if "authorization" not in [k.lower() for k in req_headers.keys()]:
         token_val = st.session_state["cbx_token"]
-        if token_val.startswith("Bearer "):
-            req_headers["Authorization"] = token_val
-        elif token_val.startswith("Basic "):
+        if token_val.startswith("Bearer ") or token_val.startswith("Basic "):
             req_headers["Authorization"] = token_val
         else:
-            req_headers["Authorization"] = f"Basic {token_val}"
+            req_headers["Authorization"] = f"Bearer {token_val}"
+
+    # Inject customer_id and domain_id into request data / json_payload
+    c_id = st.session_state.get("customer_id")
+    d_id = st.session_state.get("domain_id")
+
+    if json_payload is not None:
+        if isinstance(json_payload, dict):
+            if c_id and "customer_id" not in json_payload:
+                json_payload["customer_id"] = c_id
+            if d_id and "domain_id" not in json_payload:
+                json_payload["domain_id"] = d_id
+    elif method.upper() in ["POST", "PUT", "PATCH"]:
+        if data is not None and isinstance(data, dict):
+            if c_id and "customer_id" not in data:
+                data["customer_id"] = c_id
+            if d_id and "domain_id" not in data:
+                data["domain_id"] = d_id
+        else:
+            # If no json/data payload exists yet, create one for POST/PUT
+            new_payload = {}
+            if c_id:
+                new_payload["customer_id"] = c_id
+            if d_id:
+                new_payload["domain_id"] = d_id
+            if new_payload:
+                json_payload = new_payload
+                if "content-type" not in [k.lower() for k in req_headers.keys()]:
+                    req_headers["content-type"] = "application/json"
 
     # Generate Request Visualization Code (cURL & Python)
     st.markdown("### 📤 API Request Visualization")
