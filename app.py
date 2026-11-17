@@ -229,7 +229,7 @@ with st.container():
         preview_text = f"Endpoint: {t_endpoint}"
 Method: {t_method}
 Data:
-{json.dumps(t_data, indent=2)}"
+{json.dumps(t_data, indent=2)}
         st.code(preview_text, language="json")
         
         if st.button("📥 実行ボックスにこの設定を転送する", use_container_width=True, type="primary"):
