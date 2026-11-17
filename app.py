@@ -118,8 +118,7 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
         else:
             curl_parts.append(f"  --data '{data}'")
             
-    curl_cmd = " \
-".join(curl_parts)
+    curl_cmd = " \\\n".join(curl_parts)
 
     with req_tab1:
         st.code(curl_cmd, language="bash")
@@ -140,26 +139,16 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
             st.code(str(data))
 
     with req_tab3:
-        py_code = f"""import requests
-
-url = "{full_url}"
-headers = {json.dumps(req_headers, indent=4)}
-"""
+        py_code = f"import requests\n\nurl = \"{full_url}\"\nheaders = {json.dumps(req_headers, indent=4)}\n"
         if json_payload:
-            py_code += f"json_data = {json.dumps(json_payload, indent=4)}
-"
-            py_code += f"response = requests.{method.lower()}(url, headers=headers, json=json_data)
-"
+            py_code += f"json_data = {json.dumps(json_payload, indent=4)}\n"
+            py_code += f"response = requests.{method.lower()}(url, headers=headers, json=json_data)\n"
         elif data:
-            py_code += f"data = {json.dumps(data, indent=4) if isinstance(data, dict) else str(data)}
-"
-            py_code += f"response = requests.{method.lower()}(url, headers=headers, data=data)
-"
+            py_code += f"data = {json.dumps(data, indent=4) if isinstance(data, dict) else str(data)}\n"
+            py_code += f"response = requests.{method.lower()}(url, headers=headers, data=data)\n"
         else:
-            py_code += f"response = requests.{method.lower()}(url, headers=headers)
-"
-        py_code += "print(response.status_code)
-print(response.json())"
+            py_code += f"response = requests.{method.lower()}(url, headers=headers)\n"
+        py_code += "print(response.status_code)\nprint(response.json())"
         st.code(py_code, language="python")
 
     # Execution Button & Response Display
