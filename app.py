@@ -224,11 +224,12 @@ with st.container():
 
         # NOTE: Automatic customer_id and domain_id injection has been removed per request.
 
-    with col_in2:
+with col_in2:
         st.markdown("**生成されるプレビュー (URL / データ):**")
-        preview_text = f"Endpoint: {t_endpoint}"
+        preview_text = f"""Endpoint: {t_endpoint}
 Method: {t_method}
-Data:{json.dumps(t_data, indent=2)}
+Data:
+{json.dumps(t_data, indent=2)}"""
         st.code(preview_text, language="json")
         
         if st.button("📥 実行ボックスにこの設定を転送する", use_container_width=True, type="primary"):
