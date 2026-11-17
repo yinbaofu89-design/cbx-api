@@ -21,7 +21,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Default Token
-DEFAULT_TOKEN = "eyJraWQiOiJGenFEamZXNlRYaTUzNVN4QnFoMTIzIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1cm46YnJvYWRjb206c2Fhczpkb21haW46ZjZHOHI5eEhTVmlzd0dNSENkX2ZNUTpjbGllbnQ6TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzAiLCJ2ZXIiOjIsImlzcyI6Imh0dHBzOi8vYXBpLnNlY3VyaXR5LmNvbSIsInVyaSI6Ii9vYXV0aDIvY2xpZW50cy9PMklELld2bTFMOVRBUndPWldUekVCQmpXMHcuZjZHOHI5eEhTVmlzd0dNSENkX2ZNUS41a21lcXBxbDU0YWYzcnF2NmtrNGJnaDJjMCIsImNsaWVudF9pZCI6Ik8ySUQuV3ZtMUw5VEFSd09aV1R6RUJCalcwdy5mNkc4cjl4SFNWaXN3R01IQ2RfZk1RLjVrbWVxcHFsNTRhZjNycXY2a2s0YmdoMmMwIiwiZG9tYWluX2lkIjoiZjZHOHI5eEhTVmlzd0dNSENkX2ZNUSIsInNjb3BlIjoiZG9tYWluIG9hdXRoIiwidHR5IjoiYWNjZXNzIiwicHJpdnMiOiJlZHJfZ2V0X2ZpbGUgY2J4X2Rvd25sb2FkX2ZpbGUgd3NzX3ZpZXdfcG9saWN5X2xpc3RzIGFlcF9ydW5fcXVhcmFudGluZSBzZXNfdXBkYXRlX3NoYXJlZF9lbmRwb2ludCBzZXNfdmlld19zaGFyZWRfZW5kcG9pbnQgZWRyX2RlbGV0ZV9maWxlIGVkcl9kZWxldGVfZW5kcG9pbnRzZWFyY2ggY2JjX2xyX2V4ZWN1dGVfcHJvY2VzcyBjYnhfdmlld192dWxuZXJhYmlsaXR5X2RhdGEgY3BfbWFuYWdlX2VuZHBvaW50X3BvbGljeSBjYmNfdmlld19scSBjYmNfdmlld19kYXRhX2ZvcndhcmRlcnMgY2J4X3N1Ym1pdF9zYW5kYm94IGNiY192aWV3X25vdGlmaWNhdGlvbnMgY2J4X21hbmFnZV92dWxuZXJhYmlsaXR5X2RhdGEgY2JjX3ZpZXdfd2F0Y2hsaXN0cyBjYmNfdmlld19hbGVydHMgY2JjX3VzZV9sciBlZHJfZ2V0ZmlsZV9ub2NyZWQgYWVwX3J1bl9saXZldXBkYXRlIGFlcF9tYW5hZ2VfY29tbWFuZHMgY2JjX21uZ19hbGVydHNfbm90ZXNfdGFncyBjYnhfdmlld19kZXZpY2Vfc2VhcmNoIGNiY19tbmdfbm90aWZpY2F0aW9ucyBjYmNfcGVyZm9ybV9kZW9iZnVzY2F0aW9uIGNiY19yZXF1ZXN0X3VwZGF0ZWRfdnVsbl9kYXRhIGNiY19tbmdfd2F0Y2hsaXN0cyBzZXNfdmlld19hbGxfZmlsZXMgY3BfbWFuYWdlX2dsb2JhbF9wb2xpY3kgY2JjX2Nsb3NlX2FsZXJ0cyBjYmNfbW5nX2RhdGFfZm9yd2FyZGVycyB3c3NfbWFuYWdlX3BvbGljeV9saXN0cyBjYmNfbWFuYWdlX2FsZXJ0cyBzZXNfbWFuYWdlX3NoYXJlZF9lbmRwb2ludCBjYmNfbHJfdmlldyBlZHJfdHJpZ2dlcl9lbmRwb2ludHNlYXJjaCBzZXNfdmlld19yZXBvcnRzIHZpZXdfZXZlbnRzIGVkcl9yc2hlbGxfaW52ZXMgc2VzX3RocmVhdF9pbnRlbF9hcGlfYWNjZXNzIGNiY192aWV3X2V4cG9ydF92dWxuX2RhdGEgc2VzX21hbmFnZV9yZXBvcnRzIGNiY19jb25kdWN0X3Byb2Nlc3NfYW5hbHlzaXMgY3Bfdmlld19nbG9iYWxfcG9saWN5IGFlcF9yZW1vdGVfbG9nX2NvbGxlY3QgYWVwX3J1bl9yZWJvb3QgYWVwX3J1bl9zY2FuIHRkYWRfdHJpZ2dlcl9mb3JlbnNpY3MgY2JjX2xyX2R1bXBfbWVtb3J5IGNwX3ZpZXdfeGRyX3BvbGljeSBjYmNfZXhwb3J0X2V2ZW50X2RhdGEgY3BfbWFuYWdlX3hkcl9wb2xpY3kgY2JjX2NvbmR1Y3RfaW52ZXN0aWdhdGlvbiBlZHJfdmlld19pbnZlc3RpZ2F0aW9uIGNwX3ZpZXdfZW5kcG9pbnRfcG9saWN5IGVkcl9jYW5jZWxfZW5kcG9pbnRzZWFyY2ggY2J4X2RlbGV0ZV9maWxlIGFlcF92aWV3X2NvbW1hbmRzIGNieF9tYW5hZ2VfZGV2aWNlX3NlYXJjaCIsImV4cCI6MTc5NDg5NTE1NCwiY3VzdG9tZXJfaWQiOiJXdm0xTDlUQVJ3T1pXVHpFQkJqVzB3IiwiaWF0IjoxNzk0ODkxNTU0LCJqdGkiOiJuNkh1bUMwdFRFSy1EUHdBTThReTJnIn0.UK25LPk6Fj04SB8n30KRg9vXFa8CwoN-hb0PAw-cNvy_NKgJMwMCXWXMDG0b-9dSMcO6-fDAACjklRz_tgvcoWP0zFGrLYkIv_16WVlEuNTx9efq1yLqPeA7X83i5zJD0YJSkrn1CQjuT2QSmWHgYkwq_F8mgiUz21cUAPTHA8R3_jvWuKtZnyNBwHBvjwuRqVfgFfLSQfzxpXfAxBzdC3n8HE8JqnqwS8-4P5llulpa3NRoaRW04DItstYEcJ-Vq4pRySQEjY-pW4NriIzMzWoGabsJfFU65zrMDPk6OmpuK2cOizyJHe8QtHez3Zqb07kAjHOgDArk0-67i_UQLQ"
+DEFAULT_TOKEN = "TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzA6MWU5OWhvMGNnbDdiYzBia2xuaGViaTZuZGg4dmR1dmcyaTBy"
 
 def extract_jwt_claims(token_str):
     if not token_str:
@@ -76,7 +76,7 @@ if "exec_payload" not in st.session_state:
 
 # Header
 st.markdown('<div class="main-header">⚡ CBX API Minimal Commander</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">カテゴリ別にパラメータを入力し、ワンクリックで実行ボックスへ転送・テストできるシンプルツール</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">すべてのAPIカテゴリ（脆弱性評価を含む）に対応し、テンプレートから実行ボックスへ即時転送できるシンプルツール</div>', unsafe_allow_html=True)
 
 # --- CATEGORY TABS FOR INPUT GENERATION ---
 cat = st.selectbox(
@@ -89,7 +89,8 @@ cat = st.selectbox(
         "🔔 Notifications (Rules)",
         "📜 Policy Management (List)",
         "🔓 Script Deobfuscation (Reveal)",
-        "🌐 Threat Intel (TAXII Discovery)"
+        "🌐 Threat Intel (TAXII Discovery)",
+        "🛡️ Vulnerability Assessment (Org Summary)"
     ]
 )
 
@@ -99,7 +100,6 @@ st.markdown("---")
 with st.container():
     st.subheader(f"📝 テンプレート設定: {cat}")
     
-    # Defaults
     t_method = "POST"
     t_endpoint = ""
     t_data = {}
@@ -142,6 +142,10 @@ with st.container():
         elif "Threat Intel" in cat:
             t_endpoint = "/common/threat-intel/v1/taxii11/discovery"
             t_data = {}
+        elif "Vulnerability Assessment" in cat:
+            t_method = "GET"
+            t_endpoint = "/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary"
+            t_data = {}
 
         # Automatically inject customer_id and domain_id if available & POST/PUT
         if t_method in ["POST", "PUT", "PATCH"] and isinstance(t_data, dict):
@@ -150,9 +154,11 @@ with st.container():
 
     with col_in2:
         st.markdown("**生成されるプレビュー (Rawデータ / URL):**")
-        st.code(f"Endpoint: {t_endpoint}\nMethod: {t_method}\nData:\n{json.dumps(t_data, indent=2)}", language="json")
+        st.code(f"Endpoint: {t_endpoint}
+Method: {t_method}
+Data:
+{json.dumps(t_data, indent=2)}", language="json")
         
-        # COPY BUTTON TO EXECUTION BOX
         if st.button("📥 このコマンドとデータを下の実行ボックスに移す", use_container_width=True, type="primary"):
             st.session_state["exec_method"] = t_method
             st.session_state["exec_endpoint"] = t_endpoint
@@ -168,14 +174,12 @@ st.markdown("どのカテゴリを選択しても、常にここにURLやリク�
 with st.container():
     st.markdown('<div class="box-container">', unsafe_allow_html=True)
     
-    # Method & Endpoint row
     ex_col1, ex_col2 = st.columns([1, 3])
     with ex_col1:
         method = st.selectbox("Method", ["GET", "POST", "PUT", "DELETE", "PATCH"], index=["GET", "POST", "PUT", "DELETE", "PATCH"].index(st.session_state["exec_method"]))
     with ex_col2:
         endpoint = st.text_input("Endpoint Path / URL", value=st.session_state["exec_endpoint"])
 
-    # Side-by-side URL and Data Layout
     exec_col_left, exec_col_right = st.columns([1, 1])
 
     with exec_col_left:
@@ -194,9 +198,7 @@ with st.container():
         st.markdown("#### 📦 Request Data (JSON Raw)")
         raw_data_input = st.text_area("JSON Payload", value=st.session_state["exec_payload"], height=160)
 
-    # Execution Button
     if st.button("⚡ 今すぐリクエストを実行する", use_container_width=True, type="primary"):
-        # Parse payload
         payload_to_send = None
         if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
             try:
@@ -204,7 +206,6 @@ with st.container():
             except Exception as e:
                 st.error(f"JSONパースエラー: {str(e)}")
 
-        # Perform Request
         with st.spinner("API実行中..."):
             try:
                 resp = requests.request(
@@ -218,7 +219,6 @@ with st.container():
                 st.markdown("---")
                 st.markdown("### 📥 実行結果 (Response & cURL)")
                 
-                # Status Badge
                 if 200 <= resp.status_code < 300:
                     st.success(f"Status Code: {resp.status_code} OK")
                 else:
@@ -236,13 +236,13 @@ with st.container():
                     st.json(dict(resp.headers))
                     
                 with res_tab3:
-                    # Generate exact cURL
                     curl_gen = [f"curl --request {method} '{full_url_preview}'"]
                     for hk, hv in headers_preview.items():
                         curl_gen.append(f"  --header '{hk}: {hv}'")
                     if payload_to_send:
                         curl_gen.append(f"  --data '{json.dumps(payload_to_send)}'")
-                    st.code(" \\\n".join(curl_gen), language="bash")
+                    st.code(" \
+".join(curl_gen), language="bash")
 
             except Exception as ex:
                 st.error(f"リクエスト送信失敗: {str(ex)}")
