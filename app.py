@@ -41,22 +41,17 @@ DEFAULT_TOKEN = "TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9
 
 # Helper function to extract customer_id and domain_id from JWT Token automatically
 def extract_jwt_claims(token_str):
-    """Bearer JWTトークンから customer_id と domain_id を自動解析・抽出する関数"""
     if not token_str:
         return None, None
     clean_token = token_str.replace("Bearer ", "").strip()
     parts = clean_token.split(".")
     if len(parts) == 3:
         try:
-            # Base64パディング補正
             payload_b64 = parts[1]
             payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
             decoded_bytes = base64.b64decode(payload_b64)
             payload_json = json.loads(decoded_bytes.decode("utf-8"))
-            
-            c_id = payload_json.get("customer_id")
-            d_id = payload_json.get("domain_id")
-            return c_id, d_id
+            return payload_json.get("customer_id"), payload_json.get("domain_id")
         except Exception:
             pass
     return None, None
@@ -70,7 +65,7 @@ api_token = st.sidebar.text_input(
     "OAuth Basic Token / Bearer Token",
     value=DEFAULT_TOKEN,
     type="password",
-    help="OAuth 認証トークンを設定します。Bearer トークンの場合、含まれる customer_id / domain_id は自動抽出されます。"
+    help="デフォルトのTokenが設定されています。別のTokenを使用する場合は削除して新しいTokenを入力してください。"
 )
 
 server_url = st.sidebar.selectbox(
@@ -79,29 +74,23 @@ server_url = st.sidebar.selectbox(
     help="CBX APIのベースURLを選択します。"
 )
 
-# JWTの自動解析処理
 extracted_c_id, extracted_d_id = extract_jwt_claims(api_token)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🏢 Auto-Detected Context")
+st.sidebar.subheader("🏢 Token Context")
 if extracted_c_id or extracted_d_id:
     st.sidebar.success(f"**Customer ID:** `{extracted_c_id}`\n\n**Domain ID:** `{extracted_d_id}`")
 else:
-    st.sidebar.warning("⚠️ Bearer Token 未設定（Basic認証値または未設定の状態）")
-
-st.sidebar.markdown("---")
-st.sidebar.info("""
-💡 **自動補正機能**
-Bearer トークンが設定されている場合、トークンから `customer_id` と `domain_id` を自動抽出し、APIリクエストのペイロード（Data）へ自動適用します。
-""")
+    st.sidebar.warning("⚠️ Bearer Token 未設定または解析不可")
 
 st.session_state["cbx_token"] = api_token if api_token else DEFAULT_TOKEN
+st.session_state["extracted_customer_id"] = extracted_c_id
+st.session_state["extracted_domain_id"] = extracted_d_id
 
-# API Request Dispatcher
+# Core API Request Dispatcher
 def make_api_request(method, endpoint, headers=None, data=None, json_payload=None, params=None):
     full_url = f"{server_url.rstrip('/')}{endpoint}"
     
-    # Headers Setup
     req_headers = {}
     if headers:
         req_headers.update(headers)
@@ -113,32 +102,7 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
         else:
             req_headers["Authorization"] = f"Bearer {token_val}"
 
-    # Auto-inject customer_id & domain_id into request data/json_payload from Token
-    c_id, d_id = extract_jwt_claims(st.session_state["cbx_token"])
-
-    if json_payload is not None and isinstance(json_payload, dict):
-        if c_id and "customer_id" not in json_payload:
-            json_payload["customer_id"] = c_id
-        if d_id and "domain_id" not in json_payload:
-            json_payload["domain_id"] = d_id
-    elif method.upper() in ["POST", "PUT", "PATCH"]:
-        if data is not None and isinstance(data, dict):
-            if c_id and "customer_id" not in data:
-                data["customer_id"] = c_id
-            if d_id and "domain_id" not in data:
-                data["domain_id"] = d_id
-        elif json_payload is None and data is None:
-            new_payload = {}
-            if c_id:
-                new_payload["customer_id"] = c_id
-            if d_id:
-                new_payload["domain_id"] = d_id
-            if new_payload:
-                json_payload = new_payload
-                if "content-type" not in [k.lower() for k in req_headers.keys()]:
-                    req_headers["content-type"] = "application/json"
-
-    # Request Code Generation (cURL / Python)
+    # Request Visualization
     st.markdown("### 📤 API Request Visualization")
     req_tab1, req_tab2, req_tab3 = st.tabs(["cURL Command", "HTTP Details", "Python Code Snippet"])
     
@@ -192,7 +156,7 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
         py_code += "print(response.status_code)\nprint(response.json())"
         st.code(py_code, language="python")
 
-    # Execution & Response Display
+    # Execution & Response
     st.markdown("### 📥 API Response")
     with st.spinner("Executing Request..."):
         try:
@@ -254,7 +218,6 @@ if category == "🔑 Authentication (OAuth 2.0)":
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Get Bearer Token (`POST /common/v1/oauth2/tokens`)")
-        st.markdown("OAuth Client Credentials (Basic Auth Token) を使って1時間有効な Bearer Token を発行します。")
         grant_type = st.text_input("Grant Type", value="client_credentials", key="auth_grant")
         scope = st.text_input("Scope", value="domain", key="auth_scope")
         
@@ -271,15 +234,11 @@ if category == "🔑 Authentication (OAuth 2.0)":
                     "scope": scope
                 }
             )
-
     with col2:
         st.markdown("""
         <div class="help-box">
-        <h4>📌 認証機能の使い方・ヘルプ</h4>
-        <ul>
-            <li><b>基本認証:</b> OAuth Client Credentials をサイドバーに設定します。</li>
-            <li><b>自動判定:</b> 発行された Bearer トークンをサイドバーにセットすると、トークン内の <code>customer_id</code> / <code>domain_id</code> が自動認識されます。</li>
-        </ul>
+        <h4>📌 使い方・ヘルプ</h4>
+        <p>OAuth Client Credentials を用いて1時間有効な Bearer Token を発行します。</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -305,8 +264,8 @@ elif category == "🎯 Custom Detections":
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Custom Detection Search</h4>
-            <p>組織独自の脅威検知ルール（カスタムデテクション）の一覧を取得します。</p>
+            <h4>📌 使い方・ヘルプ</h4>
+            <p>組織独自のカスタム検知ルールをページネーション付きで検索します。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -328,8 +287,8 @@ elif category == "🎯 Custom Detections":
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Create Custom Detection</h4>
-            <p>新しいカスタム検知ルールを作成します。</p>
+            <h4>📌 使い方・ヘルプ</h4>
+            <p>新しいカスタム検知ルール（メタデータ）を作成します。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -337,19 +296,20 @@ elif category == "🎯 Custom Detections":
         col1, col2 = st.columns([1, 1])
         with col1:
             st.subheader("Search Query Sub-resources")
-            q_search = st.text_input("Search Keyword", value="cmd.exe")
+            q_val = st.text_input("Query String / Keyword", value="cmd.exe")
             if st.button("クエリ検索実行", key="btn_q_search", use_container_width=True):
+                # 正しい検索スキーマ構造 (criteria)
                 make_api_request(
                     method="POST",
                     endpoint="/detect-respond/detection/v1/custom-detections/queries/_search",
                     headers={"content-type": "application/json"},
-                    json_payload={"query": q_search}
+                    json_payload={"criteria": {"query": q_val}}
                 )
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Search Queries</h4>
-            <p>検知クエリ文字列をグループ横断で検索します。</p>
+            <h4>📌 使い方・ヘルプ</h4>
+            <p>指定したクエリ条件に一致する検知クエリサブリンケージを検索します。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -359,27 +319,27 @@ elif category == "💻 Device Query":
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Trigger Device Query (`POST /commands`)")
-        query_type = st.selectbox("Query Type", ["forensic", "artifact"])
+        command_type = st.selectbox("Command Type", ["forensic", "artifact"])
         query_cmd = st.text_area("Query / Command", value="SELECT * FROM processes WHERE name = 'powershell.exe';")
         device_ids = st.text_input("Target Device IDs (カンマ区切り)", value="dev-001,dev-002")
         
         if st.button("クエリコマンド実行", key="btn_dq_trigger", use_container_width=True):
             dev_list = [d.strip() for d in device_ids.split(",") if d.strip()]
+            # 正しいキー名 'command_type' を使用
             make_api_request(
                 method="POST",
                 endpoint="/detect-respond/device-query/v2/commands",
                 headers={"content-type": "application/json"},
                 json_payload={
-                    "type": query_type,
+                    "command_type": command_type,
                     "query": query_cmd,
                     "device_ids": dev_list
                 }
             )
-
     with col2:
         st.markdown("""
         <div class="help-box">
-        <h4>📌 使い方・ヘルプ: Device Query</h4>
+        <h4>📌 使い方・ヘルプ</h4>
         <p>エンドポイントに対してリアルタイムにフォレンジック調査クエリを送信します。</p>
         </div>
         """, unsafe_allow_html=True)
@@ -406,7 +366,7 @@ elif category == "⚙️ Jobs & Export":
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Start Event Export</h4>
+            <h4>📌 使い方・ヘルプ</h4>
             <p>大量のイベントデータをバックグラウンド抽出するジョブを発行します。</p>
             </div>
             """, unsafe_allow_html=True)
@@ -432,8 +392,8 @@ elif category == "⚙️ Jobs & Export":
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Job Status & Download</h4>
-            <p>ジョブの完了確認とファイルダウンロードURLの取得を行います。</p>
+            <h4>📌 使い方・ヘルプ</h4>
+            <p>ジョブのステータス確認および結果ファイルのダウンロードを行います。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -458,7 +418,7 @@ elif category == "🔌 Live Response":
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Live Response Session</h4>
+            <h4>📌 使い方・ヘルプ</h4>
             <p>リモート端末と対話型リアルタイムセッションを確立します。</p>
             </div>
             """, unsafe_allow_html=True)
@@ -468,7 +428,7 @@ elif category == "🔌 Live Response":
         with col1:
             st.subheader("Queue Live Response Command")
             sess_id = st.text_input("Session ID", value="sess-001")
-            lr_cmd = st.text_input("Command (e.g. exec, dir, processes)", value="processes")
+            lr_cmd = st.text_input("Command", value="processes")
             
             if st.button("コマンド送信", key="btn_lr_cmd", use_container_width=True):
                 make_api_request(
@@ -480,8 +440,8 @@ elif category == "🔌 Live Response":
         with col2:
             st.markdown("""
             <div class="help-box">
-            <h4>📌 使い方・ヘルプ: Live Response Command</h4>
-            <p>セッションに対して管理者コマンドを実行します。</p>
+            <h4>📌 使い方・ヘルプ</h4>
+            <p>アクティブセッションに対して管理者コマンドをキューイングします。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -508,12 +468,11 @@ elif category == "🔔 Notifications":
                 headers={"content-type": "application/json"},
                 json_payload=payload
             )
-
     with col2:
         st.markdown("""
         <div class="help-box">
-        <h4>📌 使い方・ヘルプ: Notifications</h4>
-        <p>アラート通知ルール管理および履歴の監査を行います。</p>
+        <h4>📌 使い方・ヘルプ</h4>
+        <p>アラート通知ルールおよび履歴の監査を行います。</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -536,12 +495,11 @@ elif category == "📜 Policy Management":
                 method="POST",
                 endpoint="/common/policy-management/v2/policies/export/all"
             )
-
     with col2:
         st.markdown("""
         <div class="help-box">
-        <h4>📌 使い方・ヘルプ: Policy Management</h4>
-        <p>セキュリティポリシーの参照・一括エクスポートを行えます。</p>
+        <h4>📌 使い方・ヘルプ</h4>
+        <p>セキュリティポリシーの参照および一括エクスポートを行います。</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -563,12 +521,11 @@ elif category == "🔓 Script Deobfuscation":
                 headers={"content-type": "application/json"},
                 json_payload={"script": obfuscated_code}
             )
-
     with col2:
         st.markdown("""
         <div class="help-box">
-        <h4>📌 使い方・ヘルプ: Script Deobfuscation</h4>
-        <p>難読化・Base64エンコードされたスクリプトをMLベースで解析・解除します。</p>
+        <h4>📌 使い方・ヘルプ</h4>
+        <p>難読化されたスクリプトをMLベースで解析・解除します。</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -591,11 +548,10 @@ elif category == "🌐 Threat Intel (TAXII 1.1)":
                 method="POST",
                 endpoint="/common/threat-intel/v1/taxii11/collection-management"
             )
-
     with col2:
         st.markdown("""
         <div class="help-box">
-        <h4>📌 使い方・ヘルプ: Threat Intel (TAXII 1.1)</h4>
-        <p>STIX 1.x XML形式で脅威インテリジェンスフィードを取得します。</p>
+        <h4>📌 使い方・ヘルプ</h4>
+        <p>STIX 1.x XML形式の脅威インテリジェンスフィードを取得します。</p>
         </div>
         """, unsafe_allow_html=True)
