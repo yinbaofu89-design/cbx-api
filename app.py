@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Professional Custom CSS
+# Custom CSS
 st.markdown("""
 <style>
     .main-header {
@@ -25,13 +25,6 @@ st.markdown("""
         color: #64748B;
         margin-bottom: 2rem;
     }
-    .card {
-        background-color: #F8FAFC;
-        border-radius: 8px;
-        padding: 1.2rem;
-        border: 1px solid #E2E8F0;
-        margin-bottom: 1rem;
-    }
     .help-box {
         background-color: #EFF6FF;
         border-left: 4px solid #3B82F6;
@@ -40,16 +33,35 @@ st.markdown("""
         font-size: 0.9rem;
         color: #1E3A8A;
     }
-    .stCodeBlock {
-        border-radius: 6px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # Default Authorization Token
 DEFAULT_TOKEN = "TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzA6MWU5OWhvMGNnbDdiYzBia2xuaGViaTZuZGg4dmR1dmcyaTBy"
 
-# Sidebar: Global Token Management & Server Config
+# Helper function to extract customer_id and domain_id from JWT Token automatically
+def extract_jwt_claims(token_str):
+    """Bearer JWTトークンから customer_id と domain_id を自動解析・抽出する関数"""
+    if not token_str:
+        return None, None
+    clean_token = token_str.replace("Bearer ", "").strip()
+    parts = clean_token.split(".")
+    if len(parts) == 3:
+        try:
+            # Base64パディング補正
+            payload_b64 = parts[1]
+            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+            decoded_bytes = base64.b64decode(payload_b64)
+            payload_json = json.loads(decoded_bytes.decode("utf-8"))
+            
+            c_id = payload_json.get("customer_id")
+            d_id = payload_json.get("domain_id")
+            return c_id, d_id
+        except Exception:
+            pass
+    return None, None
+
+# Sidebar Configuration
 st.sidebar.title("🛡️ CBX Control Panel")
 st.sidebar.markdown("---")
 st.sidebar.subheader("🔑 Authentication & Server Settings")
@@ -58,7 +70,7 @@ api_token = st.sidebar.text_input(
     "OAuth Basic Token / Bearer Token",
     value=DEFAULT_TOKEN,
     type="password",
-    help="デフォルトのTokenが設定されています。別のTokenを使用する場合は削除して新しいTokenを入力してください。"
+    help="OAuth 認証トークンを設定します。Bearer トークンの場合、含まれる customer_id / domain_id は自動抽出されます。"
 )
 
 server_url = st.sidebar.selectbox(
@@ -67,42 +79,33 @@ server_url = st.sidebar.selectbox(
     help="CBX APIのベースURLを選択します。"
 )
 
+# JWTの自動解析処理
+extracted_c_id, extracted_d_id = extract_jwt_claims(api_token)
+
 st.sidebar.markdown("---")
-st.sidebar.subheader("🏢 Tenant / Customer Context")
-customer_id = st.sidebar.text_input(
-    "customer_id",
-    value="",
-    help="リクエストのDataに含める customer_id"
-)
-domain_id = st.sidebar.text_input(
-    "domain_id",
-    value="",
-    help="リクエストのDataに含める domain_id"
-)
+st.sidebar.subheader("🏢 Auto-Detected Context")
+if extracted_c_id or extracted_d_id:
+    st.sidebar.success(f"**Customer ID:** `{extracted_c_id}`\n\n**Domain ID:** `{extracted_d_id}`")
+else:
+    st.sidebar.warning("⚠️ Bearer Token 未設定（Basic認証値または未設定の状態）")
 
 st.sidebar.markdown("---")
 st.sidebar.info("""
-💡 **使用ガイド**
-1. 画面上部でトークン、customer_id、domain_idを設定します。
-2. 左メニューでカテゴリを選択し、各API機能にアクセスします。
-3. リクエスト送信時、設定された ID が自動的にリクエストのData（JSONまたはフォーム）に統合されます。
+💡 **自動補正機能**
+Bearer トークンが設定されている場合、トークンから `customer_id` と `domain_id` を自動抽出し、APIリクエストのペイロード（Data）へ自動適用します。
 """)
 
-# Store values in Session State
 st.session_state["cbx_token"] = api_token if api_token else DEFAULT_TOKEN
-st.session_state["customer_id"] = customer_id
-st.session_state["domain_id"] = domain_id
 
-# Helper function to perform API requests and render request/response UI
+# API Request Dispatcher
 def make_api_request(method, endpoint, headers=None, data=None, json_payload=None, params=None):
     full_url = f"{server_url.rstrip('/')}{endpoint}"
     
-    # Prepare Headers
+    # Headers Setup
     req_headers = {}
     if headers:
         req_headers.update(headers)
     
-    # Add Authorization Header if not provided
     if "authorization" not in [k.lower() for k in req_headers.keys()]:
         token_val = st.session_state["cbx_token"]
         if token_val.startswith("Bearer ") or token_val.startswith("Basic "):
@@ -110,24 +113,21 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
         else:
             req_headers["Authorization"] = f"Bearer {token_val}"
 
-    # Inject customer_id and domain_id into request data / json_payload
-    c_id = st.session_state.get("customer_id")
-    d_id = st.session_state.get("domain_id")
+    # Auto-inject customer_id & domain_id into request data/json_payload from Token
+    c_id, d_id = extract_jwt_claims(st.session_state["cbx_token"])
 
-    if json_payload is not None:
-        if isinstance(json_payload, dict):
-            if c_id and "customer_id" not in json_payload:
-                json_payload["customer_id"] = c_id
-            if d_id and "domain_id" not in json_payload:
-                json_payload["domain_id"] = d_id
+    if json_payload is not None and isinstance(json_payload, dict):
+        if c_id and "customer_id" not in json_payload:
+            json_payload["customer_id"] = c_id
+        if d_id and "domain_id" not in json_payload:
+            json_payload["domain_id"] = d_id
     elif method.upper() in ["POST", "PUT", "PATCH"]:
         if data is not None and isinstance(data, dict):
             if c_id and "customer_id" not in data:
                 data["customer_id"] = c_id
             if d_id and "domain_id" not in data:
                 data["domain_id"] = d_id
-        else:
-            # If no json/data payload exists yet, create one for POST/PUT
+        elif json_payload is None and data is None:
             new_payload = {}
             if c_id:
                 new_payload["customer_id"] = c_id
@@ -138,7 +138,7 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
                 if "content-type" not in [k.lower() for k in req_headers.keys()]:
                     req_headers["content-type"] = "application/json"
 
-    # Generate Request Visualization Code (cURL & Python)
+    # Request Code Generation (cURL / Python)
     st.markdown("### 📤 API Request Visualization")
     req_tab1, req_tab2, req_tab3 = st.tabs(["cURL Command", "HTTP Details", "Python Code Snippet"])
     
@@ -192,7 +192,7 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
         py_code += "print(response.status_code)\nprint(response.json())"
         st.code(py_code, language="python")
 
-    # Execution Button & Response Display
+    # Execution & Response Display
     st.markdown("### 📥 API Response")
     with st.spinner("Executing Request..."):
         try:
@@ -206,7 +206,6 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
                 timeout=30
             )
             
-            # Status Badge
             if 200 <= resp.status_code < 300:
                 st.success(f"Status Code: {resp.status_code} OK")
             elif resp.status_code == 429:
@@ -230,7 +229,7 @@ def make_api_request(method, endpoint, headers=None, data=None, json_payload=Non
 st.markdown('<div class="main-header">🛡️ CBX Security API Professional Workbench</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Symantec / Broadcom CBX APIのテスト・検証・運用を統合管理するプロフェッショナルWebツール</div>', unsafe_allow_html=True)
 
-# Main Navigation (Categories)
+# Main Navigation
 category = st.radio(
     "📁 API Categories",
     [
@@ -252,12 +251,10 @@ st.markdown("---")
 # Category 1: Authentication
 if category == "🔑 Authentication (OAuth 2.0)":
     st.header("🔑 Authentication APIs")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Get Bearer Token (`POST /common/v1/oauth2/tokens`)")
         st.markdown("OAuth Client Credentials (Basic Auth Token) を使って1時間有効な Bearer Token を発行します。")
-        
         grant_type = st.text_input("Grant Type", value="client_credentials", key="auth_grant")
         scope = st.text_input("Scope", value="domain", key="auth_scope")
         
@@ -280,10 +277,8 @@ if category == "🔑 Authentication (OAuth 2.0)":
         <div class="help-box">
         <h4>📌 認証機能の使い方・ヘルプ</h4>
         <ul>
-            <li><b>基本認証:</b> OAuth Client Credentials (Base64エンコード済み) をサイドバーの <code>OAuth Basic Token</code> に設定します。</li>
-            <li><b>アクセス確認:</b> CBX Portalの <i>Global Management > API Credentials</i> で発行した情報を使用します。</li>
-            <li><b>有効期限:</b> 発行された Bearer Token は<b>1時間 (60分)</b> 有効です。テスト時はこのトークンを他のAPI呼び出しで活用できます。</li>
-            <li><b>権限要件:</b> 要求する API の種類に応じた適切な Role / Permission を設定しておく必要があります。</li>
+            <li><b>基本認証:</b> OAuth Client Credentials をサイドバーに設定します。</li>
+            <li><b>自動判定:</b> 発行された Bearer トークンをサイドバーにセットすると、トークン内の <code>customer_id</code> / <code>domain_id</code> が自動認識されます。</li>
         </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -291,15 +286,12 @@ if category == "🔑 Authentication (OAuth 2.0)":
 # Category 2: Custom Detections
 elif category == "🎯 Custom Detections":
     st.header("🎯 Custom Detections")
-    
     tab_act1, tab_act2, tab_act3 = st.tabs(["Search Custom Detections", "Create Custom Detection", "Search Queries"])
     
     with tab_act1:
         col1, col2 = st.columns([1, 1])
         with col1:
             st.subheader("Search Custom Detections")
-            st.markdown("登録済みのカスタム検知ルールを検索します。")
-            
             page_num = st.number_input("Page Number", value=1, min_value=1)
             page_size = st.number_input("Page Size", value=10, min_value=1, max_value=100)
             
@@ -315,10 +307,6 @@ elif category == "🎯 Custom Detections":
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Custom Detection Search</h4>
             <p>組織独自の脅威検知ルール（カスタムデテクション）の一覧を取得します。</p>
-            <ul>
-                <li><b>Required Permissions:</b> <code>Custom Detections -> View</code></li>
-                <li>レスポンスにはルールのメタデータ（名前、説明、アラート有効フラグ）が含まれます。</li>
-            </ul>
             </div>
             """, unsafe_allow_html=True)
 
@@ -342,10 +330,6 @@ elif category == "🎯 Custom Detections":
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Create Custom Detection</h4>
             <p>新しいカスタム検知ルールを作成します。</p>
-            <ul>
-                <li><b>Required Permissions:</b> <code>Custom Detections -> Manage</code></li>
-                <li>作成後、クエリサブリソース（<code>queries</code>）を追加して具体的な検知条件（検索文字列・緊急度）を設定します。</li>
-            </ul>
             </div>
             """, unsafe_allow_html=True)
 
@@ -365,14 +349,13 @@ elif category == "🎯 Custom Detections":
             st.markdown("""
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Search Queries</h4>
-            <p>カスタム検知ルールの中に紐づけられている実際の検索クエリ文字列をグループ横断で検索します。</p>
+            <p>検知クエリ文字列をグループ横断で検索します。</p>
             </div>
             """, unsafe_allow_html=True)
 
 # Category 3: Device Query
 elif category == "💻 Device Query":
     st.header("💻 Device Query")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Trigger Device Query (`POST /commands`)")
@@ -397,19 +380,13 @@ elif category == "💻 Device Query":
         st.markdown("""
         <div class="help-box">
         <h4>📌 使い方・ヘルプ: Device Query</h4>
-        <p>エンドポイントに対してリアルタイムにフォレンジック調査やアーティファクト収集クエリを送信します。</p>
-        <ul>
-            <li><b>Required Permissions:</b> <code>Device Query -> Manage</code></li>
-            <li>クエリ送信後、発行された <code>commandId</code> を使用して結果を取得 (<code>POST /commands/{commandId}/results</code>) できます。</li>
-            <li>定期実行スケジュールを設定する場合は <code>/v2/schedules</code> エンドポイントを使用します。</li>
-        </ul>
+        <p>エンドポイントに対してリアルタイムにフォレンジック調査クエリを送信します。</p>
         </div>
         """, unsafe_allow_html=True)
 
 # Category 4: Jobs & Export
 elif category == "⚙️ Jobs & Export":
     st.header("⚙️ Jobs & Export")
-    
     tab_j1, tab_j2 = st.tabs(["Start Event Export", "Get Job Status & Download"])
     
     with tab_j1:
@@ -430,11 +407,7 @@ elif category == "⚙️ Jobs & Export":
             st.markdown("""
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Start Event Export</h4>
-            <p>大量のアラートやイベントデータを非同期でバックグラウンド抽出するジョブを発行します。</p>
-            <ul>
-                <li><b>Required Permissions:</b> <code>Events -> Export Event Data</code></li>
-                <li>レスポンスで返ってくる <code>job_id</code> を使用してステータスを確認・監視します。</li>
-            </ul>
+            <p>大量のイベントデータをバックグラウンド抽出するジョブを発行します。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -460,17 +433,13 @@ elif category == "⚙️ Jobs & Export":
             st.markdown("""
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Job Status & Download</h4>
-            <ul>
-                <li><b>Status Monitoring:</b> ジョブのステータスが <code>COMPLETED</code> になったことを確認します。</li>
-                <li><b>Download:</b> 完了後、安全な署名付きURL (Presigned URL) が返され、エクスポートファイルを直接ダウンロードできます。</li>
-            </ul>
+            <p>ジョブの完了確認とファイルダウンロードURLの取得を行います。</p>
             </div>
             """, unsafe_allow_html=True)
 
 # Category 5: Live Response
 elif category == "🔌 Live Response":
     st.header("🔌 Live Response")
-    
     tab_lr1, tab_lr2 = st.tabs(["Session Management", "Command Execution"])
     
     with tab_lr1:
@@ -490,11 +459,7 @@ elif category == "🔌 Live Response":
             st.markdown("""
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Live Response Session</h4>
-            <p>リモート端末と対話型リアルタイムセッションを確立し、調査・復旧対応を実施します。</p>
-            <ul>
-                <li><b>Required Permissions:</b> <code>Live Response -> Run Live Response</code></li>
-                <li>アクティブセッションのIDを取得後、コマンド実行やファイルアップロード/ダウンロードを行えます。</li>
-            </ul>
+            <p>リモート端末と対話型リアルタイムセッションを確立します。</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -516,14 +481,13 @@ elif category == "🔌 Live Response":
             st.markdown("""
             <div class="help-box">
             <h4>📌 使い方・ヘルプ: Live Response Command</h4>
-            <p>確立されたセッションに対して管理者コマンド（プロセス制御、レジストリ変更、メモリダンプ等）をキューイングします。</p>
+            <p>セッションに対して管理者コマンドを実行します。</p>
             </div>
             """, unsafe_allow_html=True)
 
 # Category 6: Notifications
 elif category == "🔔 Notifications":
     st.header("🔔 Notifications")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Fetch Notification Rules")
@@ -549,18 +513,13 @@ elif category == "🔔 Notifications":
         st.markdown("""
         <div class="help-box">
         <h4>📌 使い方・ヘルプ: Notifications</h4>
-        <p>セキュリティイベントが発生した際のアラート通知ルール管理および履歴の監査を行います。</p>
-        <ul>
-            <li><b>Required Permissions:</b> <code>Notifications -> View / Manage</code></li>
-            <li>通知パイプラインの構成や、MITRE ATT&CK フレームワークに合致した通知履歴のトラッキングが可能です。</li>
-        </ul>
+        <p>アラート通知ルール管理および履歴の監査を行います。</p>
         </div>
         """, unsafe_allow_html=True)
 
 # Category 7: Policy Management
 elif category == "📜 Policy Management":
     st.header("📜 Policy Management")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("List Policies")
@@ -582,18 +541,13 @@ elif category == "📜 Policy Management":
         st.markdown("""
         <div class="help-box">
         <h4>📌 使い方・ヘルプ: Policy Management</h4>
-        <p>セキュリティポリシー（Firewall, Allow/Deny List, XDRなど）の参照・適用・一括エクスポートを行えます。</p>
-        <ul>
-            <li><b>Required Permissions:</b> <code>Policies -> View / Manage</code></li>
-            <li>エクスポート機能は非同期処理でZIPファイルが生成されます。返却された `export-id` からステータスを確認できます。</li>
-        </ul>
+        <p>セキュリティポリシーの参照・一括エクスポートを行えます。</p>
         </div>
         """, unsafe_allow_html=True)
 
 # Category 8: Script Deobfuscation
 elif category == "🔓 Script Deobfuscation":
     st.header("🔓 Script Deobfuscation (Reveal API)")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Deobfuscate PowerShell Script")
@@ -614,18 +568,13 @@ elif category == "🔓 Script Deobfuscation":
         st.markdown("""
         <div class="help-box">
         <h4>📌 使い方・ヘルプ: Script Deobfuscation</h4>
-        <p>難読化・Base64エンコードされたPowerShellスクリプト等を機械学習（ML）ベースで解析・解除します。</p>
-        <ul>
-            <li><b>Required Permissions:</b> <code>Script Deobfuscation -> View</code></li>
-            <li><b>解析内容:</b> 平文コードの再現、埋め込まれているURL/ファイルパスの抽出、難読化信頼度スコアが返却されます。</li>
-        </ul>
+        <p>難読化・Base64エンコードされたスクリプトをMLベースで解析・解除します。</p>
         </div>
         """, unsafe_allow_html=True)
 
 # Category 9: Threat Intel (TAXII 1.1)
 elif category == "🌐 Threat Intel (TAXII 1.1)":
     st.header("🌐 Threat Intel TAXII 1.1")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("TAXII Discovery Service")
@@ -647,10 +596,6 @@ elif category == "🌐 Threat Intel (TAXII 1.1)":
         st.markdown("""
         <div class="help-box">
         <h4>📌 使い方・ヘルプ: Threat Intel (TAXII 1.1)</h4>
-        <p>STIX 1.x XML形式で脅威インテリジェンスフィード（脅威アラート、悪性URL/ファイルなど）を取得します。</p>
-        <ul>
-            <li><b>認証方式:</b> Basic Authentication（OAuth Client Credentialsを Base64 エンコードした値）</li>
-            <li>標準的な MITRE TAXII 1.1 仕様に基づき、Discovery / Collection / Poll サービスを提供します。</li>
-        </ul>
+        <p>STIX 1.x XML形式で脅威インテリジェンスフィードを取得します。</p>
         </div>
         """, unsafe_allow_html=True)
