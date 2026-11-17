@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import json
 import base64
+from urllib.parse import urlencode, quote
 
 # Streamlit Page Config
 st.set_page_config(
@@ -37,6 +38,41 @@ def extract_jwt_claims(token_str):
             pass
     return None, None
 
+def build_query(path, params):
+    """None / 空文字のパラメータを除外してクエリ文字列を付与する"""
+    clean = {k: v for k, v in params.items() if v not in (None, "")}
+    return f"{path}?{urlencode(clean)}" if clean else path
+
+def parse_devices(text):
+    """'device_id,device_name' を1行1台で解析して devices 配列にする"""
+    devices = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        parts = [x.strip() for x in line.split(",", 1)]
+        devices.append({"device_id": parts[0], "device_name": parts[1] if len(parts) > 1 else ""})
+    return devices
+
+def csv_list(text):
+    """カンマ区切り文字列をリストに変換する"""
+    return [x.strip() for x in text.split(",") if x.strip()]
+
+def time_range_input(key_prefix, default_window="-2w"):
+    """time_range（window か start/end のどちらか一方）を生成する"""
+    tr_mode = st.radio("time_range", ["window (相対)", "start / end (絶対)", "指定しない"], horizontal=True, key=f"{key_prefix}_tr_mode")
+    if tr_mode.startswith("window"):
+        return {"window": st.text_input("window (例: -2w, -24h)", value=default_window, key=f"{key_prefix}_tr_window")}
+    if tr_mode.startswith("start"):
+        tr = {}
+        tr_start = st.text_input("start (ISO 8601, 含む)", value="2026-11-01T00:00:00Z", key=f"{key_prefix}_tr_start")
+        tr_end = st.text_input("end (ISO 8601, 含む)", value="2026-11-17T00:00:00Z", key=f"{key_prefix}_tr_end")
+        if tr_start:
+            tr["start"] = tr_start
+        if tr_end:
+            tr["end"] = tr_end
+        return tr
+    return None
+
 # --- SIDEBAR ---
 st.sidebar.title("⚡ CBX Control Panel")
 st.sidebar.markdown("---")
@@ -70,13 +106,15 @@ if "exec_payload" not in st.session_state:
 
 # Header
 st.markdown('<div class="main-header">⚡ CBX API Master Commander</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント対応（File Inventory対応版）。テンプレートから実行ボックスへのデータ転送機能付き。</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント対応（File Inventory v2 / Events v4 対応版）。テンプレートから実行ボックスへのデータ転送機能付き。</div>', unsafe_allow_html=True)
 
 # Category selection covering File Inventory & other modules
 module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
+        "🔑 Authentication (OAuth 2.0)",
         "📁 File Inventory",
+        "🔍 Events",
         "🎯 Custom Detections",
         "💻 Device Query",
         "🚨 Alerts & Threats",
@@ -112,31 +150,169 @@ with st.container():
 
         elif "File Inventory" in module_choice:
             op = st.selectbox("Endpoint", [
-                "POST /detect-respond/file-inventory/v1/files/_search",
-                "GET /detect-respond/file-inventory/v1/files/{sha256}",
-                "POST /detect-respond/file-inventory/v1/files/sandbox-analysis",
-                "POST /detect-respond/file-inventory/v1/files/quarantine"
+                "GET /detect-respond/file-inventory/v2/files",
+                "GET /detect-respond/file-inventory/v2/files/hashes",
+                "GET /detect-respond/file-inventory/v2/files/{file_hash}",
+                "GET /detect-respond/file-inventory/v2/files/{file_hash}/devices",
+                "GET /detect-respond/file-inventory/v2/files/{file_hash}/devices/{device_id}/paths",
+                "POST /detect-respond/file-inventory/v2/files/{file_hash}/download",
+                "POST /detect-respond/file-inventory/v2/files/{file_hash}/quarantine",
+                "POST /detect-respond/file-inventory/v2/files/{file_hash}/unquarantine",
+                "POST /detect-respond/file-inventory/v2/files/{file_hash}/delete"
             ])
             t_method, t_endpoint = op.split(" ", 1)
-            
-            if "{sha256}" in t_endpoint:
-                sha_val = st.text_input("sha256", value="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-                t_endpoint = t_endpoint.replace("{sha256}", sha_val)
 
-            if "_search" in t_endpoint:
+            if "{file_hash}" in t_endpoint:
+                sha_val = st.text_input("file_hash (SHA-256, 64桁小文字hex)", value="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                t_endpoint = t_endpoint.replace("{file_hash}", sha_val.strip().lower())
+            if "{device_id}" in t_endpoint:
+                dev_val = st.text_input("device_id", value="tLHktvhvReukGuFiNUFSzw")
+                t_endpoint = t_endpoint.replace("{device_id}", quote(dev_val.strip(), safe=""))
+
+            if t_endpoint.endswith("/files") or t_endpoint.endswith("/files/hashes"):
+                # listFileInventory / listFileHashes: クエリパラメータ
+                where = st.text_input('where (例: risk = "High" / file_name = "notepad.exe" / sandbox_status = "malware")', value='risk = "High"')
+                order_by = st.text_input("order_by (例: file_name asc,risk desc)", value="")
+                page = st.number_input("page", value=1, min_value=1, max_value=10000)
+                page_size = st.number_input("page_size", value=100, min_value=1, max_value=100)
+                t_endpoint = build_query(t_endpoint, {"where": where, "order_by": order_by, "page": page, "page_size": page_size})
+            elif t_method == "GET" and (t_endpoint.endswith("/devices") or t_endpoint.endswith("/paths")):
+                page = st.number_input("page", value=1, min_value=1, max_value=10000)
+                page_size = st.number_input("page_size", value=100, min_value=1, max_value=100)
+                t_endpoint = build_query(t_endpoint, {"page": page, "page_size": page_size})
+            elif t_method == "GET":
+                # getFileDetails
+                include = st.selectbox("include", ["", "alerts", "incidents", "incidents_and_alerts"])
+                t_endpoint = build_query(t_endpoint, {"include": include})
+            elif t_endpoint.endswith("/download"):
+                st.caption("200: ダウンロードURLを返却 / 202: デバイスから取得中（同じリクエストを再送してポーリング）")
+                file_name = st.text_input("file_name (必須)", value="malware.exe")
+                dl_dev_id = st.text_input("device_id", value="fkzEZpZU9VdvuQh6Eeo6ra")
+                dl_dev_name = st.text_input("device_name", value="DESKTOP-WIN10")
+                dl_password = st.text_input("password (ZIP保護, 任意)", value="", type="password")
+                dl_path = st.text_input("file_path (任意, 空なら自動解決)", value="")
+                t_data = {"file_name": file_name}
+                if dl_dev_id:
+                    t_data["device_id"] = dl_dev_id
+                if dl_dev_name:
+                    t_data["device_name"] = dl_dev_name
+                if dl_password:
+                    t_data["password"] = dl_password
+                if dl_path:
+                    t_data["file_path"] = dl_path
+            else:
+                # quarantine / unquarantine / delete
+                if t_endpoint.endswith("/delete"):
+                    st.warning("⚠️ delete は対象デバイス上のファイルを完全に削除します（元に戻せません）。")
+                file_name = st.text_input("file_name (必須)", value="malware.exe")
+                devices_text = st.text_area("devices (1行1台: device_id,device_name)", value="fkzEZpZU9VdvuQh6Eeo6ra,DESKTOP-WIN10")
+                t_data = {"file_name": file_name, "devices": parse_devices(devices_text)}
+                st.caption("状態確認: GET /agent-management/device-commands/v2/commands?correlation_id={reference_command_id}")
+
+        elif "Events" in module_choice:
+            op = st.selectbox("Endpoint", [
+                "GET /detect-respond/event-search/v4/events/search-suggestions",
+                "POST /detect-respond/event-search/v4/events/search-validation",
+                "POST /detect-respond/event-search/v4/events/search-jobs",
+                "GET /detect-respond/event-search/v4/events/search-jobs/{job_id}/results",
+                "POST /detect-respond/event-search/v4/events/facet-jobs",
+                "GET /detect-respond/event-search/v4/events/facet-jobs/{job_id}/results",
+                "POST /detect-respond/event-search/v4/events/detail-jobs",
+                "GET /detect-respond/event-search/v4/events/detail-jobs/{job_id}/results",
+                "POST /detect-respond/event-search/v4/processes/summary-jobs",
+                "GET /detect-respond/event-search/v4/processes/summary-jobs/{job_id}",
+                "GET /detect-respond/event-search/v4/processes/summary-jobs/{job_id}/results",
+                "POST /detect-respond/event-search/v4/processes/search-jobs",
+                "GET /detect-respond/event-search/v4/processes/search-jobs/{job_id}/results",
+                "POST /detect-respond/event-search/v4/processes/facet-jobs",
+                "GET /detect-respond/event-search/v4/processes/facet-jobs/{job_id}/results"
+            ])
+            t_method, t_endpoint = op.split(" ", 1)
+
+            if "{job_id}" in t_endpoint:
+                job_val = st.text_input("job_id (ジョブ作成レスポンスの job_id)", value="a1b2c3d4-1234-5678-9abc-def012345678")
+                t_endpoint = t_endpoint.replace("{job_id}", quote(job_val.strip(), safe=""))
+                st.caption("status が COMPLETED になるまでポーリング（推奨: 500ms + 指数バックオフ / ジョブは7日で失効）")
+
+            if t_endpoint.endswith("/search-suggestions"):
+                suggest_q = st.text_input("suggest_q (必須)", value="process_")
+                suggest_count = st.number_input("suggest_count", value=50, min_value=1)
+                resource = st.selectbox("resource", ["event_search", "process_event_search"])
+                t_endpoint = build_query(t_endpoint, {"suggest_q": suggest_q, "suggest_count": suggest_count, "resource": resource})
+
+            elif t_endpoint.endswith("/search-validation"):
+                query = st.text_area("query (必須)", value="process_name:chrome.exe AND event_type:netconn")
+                resource = st.selectbox("resource", ["event_search", "process_event_search"])
+                t_data = {"query": query, "resource": resource}
+
+            elif t_method == "POST" and t_endpoint.endswith("/search-jobs"):
+                is_process = "/processes/" in t_endpoint
+                t_data = {}
+                if is_process:
+                    st.caption("SKU: CBX Essentials では非対応")
+                    t_data["process_guid"] = st.text_input("process_guid (必須)", value="ABCD1234-0002b226-00000474-00000000-1d6a1c1f2a3b4c5")
+                t_data["query"] = st.text_area("query (必須)", value="event_type:netconn" if is_process else "process_name:chrome.exe")
+                fields = st.text_input("fields (カンマ区切り, * で全フィールド)",
+                                       value="device_timestamp,event_type,netconn_remote_ipv4" if is_process else "backend_timestamp,device_name,process_name,event_type")
+                if csv_list(fields):
+                    t_data["fields"] = csv_list(fields)
+                t_data["rows"] = st.number_input("rows", value=500, min_value=1, max_value=10000)
+                tr = time_range_input("ev_search", "-1w" if is_process else "-2w")
+                if tr:
+                    t_data["time_range"] = tr
+                order_by = st.text_input("order_by (クエリパラメータ, 例: device_timestamp desc)", value="")
+                t_endpoint = build_query(t_endpoint, {"order_by": order_by})
+
+            elif t_method == "POST" and t_endpoint.endswith("/facet-jobs"):
+                is_process = "/processes/" in t_endpoint
+                t_data = {}
+                if is_process:
+                    st.caption("SKU: CBX Essentials では非対応")
+                    t_data["process_guid"] = st.text_input("process_guid (必須)", value="ABCD1234-0002b226-00000474-00000000-1d6a1c1f2a3b4c5")
+                t_data["query"] = st.text_area("query (必須)", value="event_type:filemod" if is_process else "process_name:chrome.exe")
+                term_fields = st.text_input("terms.fields (カンマ区切り)", value="event_type" if is_process else "event_type,device_name")
+                term_rows = st.number_input("terms.rows", value=10, min_value=1, max_value=10000)
+                t_data["terms"] = {"fields": csv_list(term_fields), "rows": term_rows}
+                if st.checkbox("ranges を追加（ヒストグラム）", value=not is_process):
+                    r_field = st.text_input("ranges.field", value="device_timestamp")
+                    r_start = st.text_input("ranges.start（含む）", value="2026-11-03T00:00:00Z")
+                    r_end = st.text_input("ranges.end（含まない）", value="2026-11-18T00:00:00Z")
+                    r_bucket = st.text_input("ranges.bucket_size", value="+1DAY")
+                    t_data["ranges"] = [{"field": r_field, "start": r_start, "end": r_end, "bucket_size": r_bucket}]
+                tr = time_range_input("ev_facet", "-2w")
+                if tr:
+                    t_data["time_range"] = tr
+
+            elif t_endpoint.endswith("/detail-jobs"):
+                id_type = st.radio("対象 (どちらか一方)", ["event_id", "alert_id"], horizontal=True)
+                id_val = st.text_input(id_type, value="8f0a1b2c3d4e5f60718293a4b5c6d7e8" if id_type == "event_id" else "alt-123")
+                t_data = {id_type: id_val}
+
+            elif t_endpoint.endswith("/summary-jobs"):
+                st.caption("SKU: CBX Essentials では非対応")
+                t_data = {"process_guid": st.text_input("process_guid (必須)", value="ABCD1234-0002b226-00000474-00000000-1d6a1c1f2a3b4c5")}
+                parent_guid = st.text_input("parent_guid (任意)", value="")
+                alert_id = st.text_input("alert_id (任意)", value="")
+                if parent_guid:
+                    t_data["parent_guid"] = parent_guid
+                tr = time_range_input("ev_summary", "-1w")
+                if tr:
+                    t_data["time_range"] = tr
+                if alert_id:
+                    t_data["alert_id"] = alert_id
+
+            elif "/summary-jobs/" in t_endpoint and t_endpoint.endswith("/results"):
+                fmt = st.selectbox("format", ["summary", "tree"])
+                t_endpoint = build_query(t_endpoint, {"format": fmt})
+
+            elif "/search-jobs/" in t_endpoint:
                 page = st.number_input("page", value=1, min_value=1)
-                size = st.number_input("size", value=10, min_value=1)
-                risk_filter = st.selectbox("Risk Filter", ["All", "High", "Medium", "Low", "Very Low", "Very High"])
-                t_data = {"page": page, "size": size}
-                if risk_filter != "All":
-                    t_data["risk"] = risk_filter
-            elif "sandbox-analysis" in t_endpoint:
-                sha_target = st.text_input("Target SHA-256", value="e3b0c442...")
-                t_data = {"sha256": sha_target}
-            elif "quarantine" in t_endpoint:
-                action = st.selectbox("Action", ["quarantine", "unquarantine"])
-                sha_target = st.text_input("Target SHA-256", value="e3b0c442...")
-                t_data = {"action": action, "sha256": sha_target}
+                page_size = st.number_input("page_size", value=500, min_value=1)
+                t_endpoint = build_query(t_endpoint, {"page": page, "page_size": page_size})
+
+            elif "/facet-jobs/" in t_endpoint:
+                limit = st.number_input("limit (フィールドごとのバケット数)", value=100, min_value=1)
+                t_endpoint = build_query(t_endpoint, {"limit": limit})
 
         elif "Custom Detections" in module_choice:
             op = st.selectbox("Endpoint", [
