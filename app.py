@@ -5,41 +5,24 @@ import base64
 
 # Streamlit Page Config
 st.set_page_config(
-    page_title="CBX API Professional Console",
-    page_icon="🛡️",
+    page_title="CBX API Minimal Commander",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS for clean UI
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #1E293B;
-        margin-bottom: 0.5rem;
-    }
-    .sub-header {
-        font-size: 1rem;
-        color: #64748B;
-        margin-bottom: 2rem;
-    }
-    .help-box {
-        background-color: #EFF6FF;
-        border-left: 4px solid #3B82F6;
-        padding: 1rem;
-        border-radius: 0 8px 8px 0;
-        font-size: 0.9rem;
-        color: #1E3A8A;
-    }
+    .main-header { font-size: 1.8rem; font-weight: 700; color: #1E293B; margin-bottom: 0.2rem; }
+    .sub-header { font-size: 0.9rem; color: #64748B; margin-bottom: 1.5rem; }
+    .box-container { background-color: #F8FAFC; padding: 1rem; border-radius: 8px; border: 1px solid #E2E8F0; }
 </style>
 """, unsafe_allow_html=True)
 
-# Default Authorization Token
-DEFAULT_TOKEN = "eyJraWQiOiJGenFEamZXNlRYaTUzNVN4QnFoMTIzIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1cm46YnJvYWRjb206c2Fhczpkb21haW46ZjZHOHI5eEhTVmlzd0dNSENkX2ZNUTpjbGllbnQ6TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzAiLCJ2ZXIiOjIsImlzcyI6Imh0dHBzOi8vYXBpLnNlY3VyaXR5LmNvbSIsInVyaSI6Ii9vYXV0aDIvY2xpZW50cy9PMklELld2bTFMOVRBUndPWldUekVCQmpXMHcuZjZHOHI5eEhTVmlzd0dNSENkX2ZNUS41a21lcXBxbDU0YWYzcnF2NmtrNGJnaDJjMCIsImNsaWVudF9pZCI6Ik8ySUQuV3ZtMUw5VEFSd09aV1R6RUJCalcwdy5mNkc4cjl4SFNWaXN3R01IQ2RfZk1RLjVrbWVxcHFsNTRhZjNycXY2a2s0YmdoMmMwIiwiZG9tYWluX2lkIjoiZjZHOHI5eEhTVmlzd0dNSENkX2ZNUSIsInNjb3BlIjoiZG9tYWluIG9hdXRoIiwidHR5IjoiYWNjZXNzIiwicHJpdnMiOiJlZHJfZ2V0X2ZpbGUgY2J4X2Rvd25sb2FkX2ZpbGUgd3NzX3ZpZXdfcG9saWN5X2xpc3RzIGFlcF9ydW5fcXVhcmFudGluZSBzZXNfdXBkYXRlX3NoYXJlZF9lbmRwb2ludCBzZXNfdmlld19zaGFyZWRfZW5kcG9pbnQgZWRyX2RlbGV0ZV9maWxlIGVkcl9kZWxldGVfZW5kcG9pbnRzZWFyY2ggY2JjX2xyX2V4ZWN1dGVfcHJvY2VzcyBjYnhfdmlld192dWxuZXJhYmlsaXR5X2RhdGEgY3BfbWFuYWdlX2VuZHBvaW50X3BvbGljeSBjYmNfdmlld19scSBjYmNfdmlld19kYXRhX2ZvcndhcmRlcnMgY2J4X3N1Ym1pdF9zYW5kYm94IGNiY192aWV3X25vdGlmaWNhdGlvbnMgY2J4X21hbmFnZV92dWxuZXJhYmlsaXR5X2RhdGEgY2JjX3ZpZXdfd2F0Y2hsaXN0cyBjYmNfdmlld19hbGVydHMgY2JjX3VzZV9sciBlZHJfZ2V0ZmlsZV9ub2NyZWQgYWVwX3J1bl9saXZldXBkYXRlIGFlcF9tYW5hZ2VfY29tbWFuZHMgY2JjX21uZ19hbGVydHNfbm90ZXNfdGFncyBjYnhfdmlld19kZXZpY2Vfc2VhcmNoIGNiY19tbmdfbm90aWZpY2F0aW9ucyBjYmNfcGVyZm9ybV9kZW9iZnVzY2F0aW9uIGNiY19yZXF1ZXN0X3VwZGF0ZWRfdnVsbl9kYXRhIGNiY19tbmdfd2F0Y2hsaXN0cyBzZXNfdmlld19hbGxfZmlsZXMgY3BfbWFuYWdlX2dsb2JhbF9wb2xpY3kgY2JjX2Nsb3NlX2FsZXJ0cyBjYmNfbW5nX2RhdGFfZm9yd2FyZGVycyB3c3NfbWFuYWdlX3BvbGljeV9saXN0cyBjYmNfbWFuYWdlX2FsZXJ0cyBzZXNfbWFuYWdlX3NoYXJlZF9lbmRwb2ludCBjYmNfbHJfdmlldyBlZHJfdHJpZ2dlcl9lbmRwb2ludHNlYXJjaCBzZXNfdmlld19yZXBvcnRzIHZpZXdfZXZlbnRzIGVkcl9yc2hlbGxfaW52ZXMgc2VzX3RocmVhdF9pbnRlbF9hcGlfYWNjZXNzIGNiY192aWV3X2V4cG9ydF92dWxuX2RhdGEgc2VzX21hbmFnZV9yZXBvcnRzIGNiY19jb25kdWN0X3Byb2Nlc3NfYW5hbHlzaXMgY3Bfdmlld19nbG9iYWxfcG9saWN5IGFlcF9yZW1vdGVfbG9nX2NvbGxlY3QgYWVwX3J1bl9yZWJvb3QgYWVwX3J1bl9zY2FuIHRkYWRfdHJpZ2dlcl9mb3JlbnNpY3MgY2JjX2xyX2R1bXBfbWVtb3J5IGNwX3ZpZXdfeGRyX3BvbGljeSBjYmNfZXhwb3J0X2V2ZW50X2RhdGEgY3BfbWFuYWdlX3hkcl9wb2xpY3kgY2JjX2NvbmR1Y3RfaW52ZXN0aWdhdGlvbiBlZHJfdmlld19pbnZlc3RpZ2F0aW9uIGNwX3ZpZXdfZW5kcG9pbnRfcG9saWN5IGVkcl9jYW5jZWxfZW5kcG9pbnRzZWFyY2ggY2J4X2RlbGV0ZV9maWxlIGFlcF92aWV3X2NvbW1hbmRzIGNieF9tYW5hZ2VfZGV2aWNlX3NlYXJjaCIsImV4cCI6MTc5NDg4NzM2MSwiY3VzdG9tZXJfaWQiOiJXdm0xTDlUQVJ3T1pXVHpFQkJqVzB3IiwiaWF0IjoxNzk0ODgzNzYxLCJqdGkiOiItSjQ1WTgyQlRSR0tUTU9IMkdYTkVBIn0.F-gZq4F2xpmv7nmsZe1E1mDSDAKo4L0aLLuvqykyinLOsdyFjkYRYGUQitOh51NdfVpk8nW8CxuLqmcDcSXj2SZIuAmoAZjfpX-qeLBtrsvDqPNsdkoffa6TJqrtljVGqG9EU7UDVNsOnyANj_1RjkF-Z0gFHj8kRmnO1OYK0Ln8tinhgnl6Vtu6qvy70Mxz93Iq9skEZbQKYs61m2_pJz8j-WtgcOJZGjC8_gM67oeLAlrK_Au_LCK4a_X9gh3ImuR6r9i_hOXllyj8nA4w7gaD404cZxQ9Z7-JyC0TywhBPV8UvXqNMmXT-9sJOufxbwS2AIoNTLihZeR_i0VtEQ"
+# Default Token
+DEFAULT_TOKEN = "TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzA6MWU5OWhvMGNnbDdiYzBia2xuaGViaTZuZGg4dmR1dmcyaTBy"
 
-# Helper function to extract customer_id and domain_id from JWT Token automatically
 def extract_jwt_claims(token_str):
     if not token_str:
         return None, None
@@ -47,511 +30,221 @@ def extract_jwt_claims(token_str):
     parts = clean_token.split(".")
     if len(parts) == 3:
         try:
-            payload_b64 = parts[1]
-            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
-            decoded_bytes = base64.b64decode(payload_b64)
-            payload_json = json.loads(decoded_bytes.decode("utf-8"))
+            payload_b64 = parts[1] + "=" * ((4 - len(parts[1]) % 4) % 4)
+            payload_json = json.loads(base64.b64decode(payload_b64).decode("utf-8"))
             return payload_json.get("customer_id"), payload_json.get("domain_id")
         except Exception:
             pass
     return None, None
 
-# Sidebar Configuration
-st.sidebar.title("🛡️ CBX Control Panel")
+# --- SIDEBAR: GLOBAL TOKEN & CONFIG ---
+st.sidebar.title("⚡ CBX Control Panel")
 st.sidebar.markdown("---")
-st.sidebar.subheader("🔑 Authentication & Server Settings")
 
 api_token = st.sidebar.text_input(
-    "OAuth Basic Token / Bearer Token",
+    "OAuth Bearer / Basic Token",
     value=DEFAULT_TOKEN,
     type="password",
-    help="デフォルトのTokenが設定されています。別のTokenを使用する場合は削除して新しいTokenを入力してください。"
+    help="認証トークンを入力してください。JWTの場合、customer_idとdomain_idが自動抽出されます。"
 )
 
-server_url = st.sidebar.selectbox(
+server_url = st.sidebar.text_input(
     "Server Base URL",
-    ["https://api.us.security.com"],
-    help="CBX APIのベースURLを選択します。"
+    value="https://api.us.security.com"
 )
 
-extracted_c_id, extracted_d_id = extract_jwt_claims(api_token)
-
+c_id, d_id = extract_jwt_claims(api_token)
 st.sidebar.markdown("---")
-st.sidebar.subheader("🏢 Token Context")
-if extracted_c_id or extracted_d_id:
-    st.sidebar.success(f"**Customer ID:** `{extracted_c_id}`\n\n**Domain ID:** `{extracted_d_id}`")
-else:
-    st.sidebar.warning("⚠️ Bearer Token 未設定または解析不可")
+st.sidebar.markdown(f"**Auto-detected Customer ID:** `{c_id or 'N/A'}`")
+st.sidebar.markdown(f"**Auto-detected Domain ID:** `{d_id or 'N/A'}`")
 
 st.session_state["cbx_token"] = api_token if api_token else DEFAULT_TOKEN
-st.session_state["extracted_customer_id"] = extracted_c_id
-st.session_state["extracted_domain_id"] = extracted_d_id
+st.session_state["server_url"] = server_url
 
-# Core API Request Dispatcher
-def make_api_request(method, endpoint, headers=None, data=None, json_payload=None, params=None):
-    full_url = f"{server_url.rstrip('/')}{endpoint}"
-    
-    req_headers = {}
-    if headers:
-        req_headers.update(headers)
-    
-    if "authorization" not in [k.lower() for k in req_headers.keys()]:
-        token_val = st.session_state["cbx_token"]
-        if token_val.startswith("Bearer ") or token_val.startswith("Basic "):
-            req_headers["Authorization"] = token_val
-        else:
-            req_headers["Authorization"] = f"Bearer {token_val}"
+# Initialize session state for execution box if not present
+if "exec_method" not in st.session_state:
+    st.session_state["exec_method"] = "POST"
+if "exec_endpoint" not in st.session_state:
+    st.session_state["exec_endpoint"] = "/detect-respond/detection/v1/custom-detections/_search"
+if "exec_payload" not in st.session_state:
+    st.session_state["exec_payload"] = json.dumps({
+        "page": 1,
+        "size": 10,
+        "customer_id": c_id or "",
+        "domain_id": d_id or ""
+    }, indent=2)
 
-    # Request Visualization
-    st.markdown("### 📤 API Request Visualization")
-    req_tab1, req_tab2, req_tab3 = st.tabs(["cURL Command", "HTTP Details", "Python Code Snippet"])
-    
-    # Build cURL
-    curl_parts = [f"curl --request {method.upper()} '{full_url}'"]
-    for k, v in req_headers.items():
-        curl_parts.append(f"  --header '{k}: {v}'")
-    if params:
-        param_str = "&".join([f"{k}={v}" for k, v in params.items() if v])
-        if param_str:
-            curl_parts[0] += f"?{param_str}"
-    if json_payload:
-        curl_parts.append(f"  --data '{json.dumps(json_payload, indent=2)}'")
-    elif data:
-        if isinstance(data, dict):
-            for k, v in data.items():
-                curl_parts.append(f"  --data '{k}={v}'")
-        else:
-            curl_parts.append(f"  --data '{data}'")
-            
-    curl_cmd = " \\\n".join(curl_parts)
+# Header
+st.markdown('<div class="main-header">⚡ CBX API Minimal Commander</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">カテゴリ別にパラメータを入力し、ワンクリックで実行ボックスへ転送・テストできるシンプルツール</div>', unsafe_allow_html=True)
 
-    with req_tab1:
-        st.code(curl_cmd, language="bash")
-        
-    with req_tab2:
-        st.markdown(f"**Method:** `{method.upper()}`")
-        st.markdown(f"**URL:** `{full_url}`")
-        st.markdown("**Headers:**")
-        st.json(req_headers)
-        if params:
-            st.markdown("**URL Parameters:**")
-            st.json(params)
-        if json_payload:
-            st.markdown("**JSON Body:**")
-            st.json(json_payload)
-        elif data:
-            st.markdown("**Form / Raw Data:**")
-            st.code(str(data))
-
-    with req_tab3:
-        py_code = f"import requests\n\nurl = \"{full_url}\"\nheaders = {json.dumps(req_headers, indent=4)}\n"
-        if json_payload:
-            py_code += f"json_data = {json.dumps(json_payload, indent=4)}\n"
-            py_code += f"response = requests.{method.lower()}(url, headers=headers, json=json_data)\n"
-        elif data:
-            py_code += f"data = {json.dumps(data, indent=4) if isinstance(data, dict) else str(data)}\n"
-            py_code += f"response = requests.{method.lower()}(url, headers=headers, data=data)\n"
-        else:
-            py_code += f"response = requests.{method.lower()}(url, headers=headers)\n"
-        py_code += "print(response.status_code)\nprint(response.json())"
-        st.code(py_code, language="python")
-
-    # Execution & Response
-    st.markdown("### 📥 API Response")
-    with st.spinner("Executing Request..."):
-        try:
-            resp = requests.request(
-                method=method,
-                url=full_url,
-                headers=req_headers,
-                params=params,
-                data=data,
-                json=json_payload,
-                timeout=30
-            )
-            
-            if 200 <= resp.status_code < 300:
-                st.success(f"Status Code: {resp.status_code} OK")
-            elif resp.status_code == 429:
-                st.warning(f"Status Code: {resp.status_code} Too Many Requests (Rate Limit Exceeded)")
-            else:
-                st.error(f"Status Code: {resp.status_code} Error")
-
-            resp_tab1, resp_tab2 = st.tabs(["Response Body", "Response Headers"])
-            with resp_tab1:
-                try:
-                    st.json(resp.json())
-                except Exception:
-                    st.text(resp.text)
-            with resp_tab2:
-                st.json(dict(resp.headers))
-
-        except Exception as e:
-            st.error(f"HTTP Request Execution Failed: {str(e)}")
-
-# Header Section
-st.markdown('<div class="main-header">🛡️ CBX Security API Professional Workbench</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Symantec / Broadcom CBX APIのテスト・検証・運用を統合管理するプロフェッショナルWebツール</div>', unsafe_allow_html=True)
-
-# Main Navigation
-category = st.radio(
-    "📁 API Categories",
+# --- CATEGORY TABS FOR INPUT GENERATION ---
+cat = st.selectbox(
+    "📁 APIカテゴリを選択してテンプレート項目を表示",
     [
-        "🔑 Authentication (OAuth 2.0)",
-        "🎯 Custom Detections",
-        "💻 Device Query",
-        "⚙️ Jobs & Export",
-        "🔌 Live Response",
-        "🔔 Notifications",
-        "📜 Policy Management",
-        "🔓 Script Deobfuscation",
-        "🌐 Threat Intel (TAXII 1.1)"
-    ],
-    horizontal=True
+        "🎯 Custom Detections (Search)",
+        "💻 Device Query (Trigger)",
+        "⚙️ Jobs (Event Export)",
+        "🔌 Live Response (Create Session)",
+        "🔔 Notifications (Rules)",
+        "📜 Policy Management (List)",
+        "🔓 Script Deobfuscation (Reveal)",
+        "🌐 Threat Intel (TAXII Discovery)"
+    ]
 )
 
 st.markdown("---")
 
-# Category 1: Authentication
-if category == "🔑 Authentication (OAuth 2.0)":
-    st.header("🔑 Authentication APIs")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader("Get Bearer Token (`POST /common/v1/oauth2/tokens`)")
-        grant_type = st.text_input("Grant Type", value="client_credentials", key="auth_grant")
-        scope = st.text_input("Scope", value="domain", key="auth_scope")
-        
-        if st.button("🚀 Tokenを発行する", use_container_width=True):
-            make_api_request(
-                method="POST",
-                endpoint="/common/v1/oauth2/tokens",
-                headers={
-                    "accept": "application/json",
-                    "content-type": "application/x-www-form-urlencoded"
-                },
-                data={
-                    "grant_type": grant_type,
-                    "scope": scope
-                }
-            )
-    with col2:
-        st.markdown("""
-        <div class="help-box">
-        <h4>📌 使い方・ヘルプ</h4>
-        <p>OAuth Client Credentials を用いて1時間有効な Bearer Token を発行します。</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# Category 2: Custom Detections
-elif category == "🎯 Custom Detections":
-    st.header("🎯 Custom Detections")
-    tab_act1, tab_act2, tab_act3 = st.tabs(["Search Custom Detections", "Create Custom Detection", "Search Queries"])
+# Template Generator based on Selection
+with st.container():
+    st.subheader(f"📝 テンプレート設定: {cat}")
     
-    with tab_act1:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Search Custom Detections")
-            page_num = st.number_input("Page Number", value=1, min_value=1)
-            page_size = st.number_input("Page Size", value=10, min_value=1, max_value=100)
-            
-            if st.button("検索実行", key="btn_cd_search", use_container_width=True):
-                make_api_request(
-                    method="POST",
-                    endpoint="/detect-respond/detection/v1/custom-detections/_search",
-                    headers={"content-type": "application/json"},
-                    json_payload={"page": page_num, "size": page_size}
-                )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>組織独自のカスタム検知ルールをページネーション付きで検索します。</p>
-            </div>
-            """, unsafe_allow_html=True)
+    # Defaults
+    t_method = "POST"
+    t_endpoint = ""
+    t_data = {}
 
-    with tab_act2:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Create Custom Detection")
-            cd_name = st.text_input("Detection Name", value="Suspicious Execution Detection")
-            cd_desc = st.text_area("Description", value="Detects unusual process execution patterns.")
-            cd_alert = st.checkbox("Enable Alerts", value=True)
-            
-            if st.button("作成実行", key="btn_cd_create", use_container_width=True):
-                make_api_request(
-                    method="POST",
-                    endpoint="/detect-respond/detection/v1/custom-detections",
-                    headers={"content-type": "application/json"},
-                    json_payload={"name": cd_name, "description": cd_desc, "enabled": cd_alert}
-                )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>新しいカスタム検知ルール（メタデータ）を作成します。</p>
-            </div>
-            """, unsafe_allow_html=True)
+    col_in1, col_in2 = st.columns([1, 1])
 
-    with tab_act3:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Search Query Sub-resources")
-            q_val = st.text_input("Query String / Keyword", value="cmd.exe")
-            if st.button("クエリ検索実行", key="btn_q_search", use_container_width=True):
-                # 正しい検索スキーマ構造 (criteria)
-                make_api_request(
-                    method="POST",
-                    endpoint="/detect-respond/detection/v1/custom-detections/queries/_search",
-                    headers={"content-type": "application/json"},
-                    json_payload={"criteria": {"query": q_val}}
-                )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>指定したクエリ条件に一致する検知クエリサブリンケージを検索します。</p>
-            </div>
-            """, unsafe_allow_html=True)
+    with col_in1:
+        if "Custom Detections" in cat:
+            t_endpoint = "/detect-respond/detection/v1/custom-detections/_search"
+            page = st.number_input("Page", value=1, min_value=1)
+            size = st.number_input("Size", value=10, min_value=1)
+            t_data = {"page": page, "size": size}
+        elif "Device Query" in cat:
+            t_endpoint = "/detect-respond/device-query/v2/commands"
+            cmd_type = st.selectbox("Command Type", ["forensic", "artifact"])
+            scope = st.selectbox("Scope", ["all", "device_ids"])
+            query_str = st.text_area("Query", value="SELECT * FROM processes WHERE name = 'powershell.exe';")
+            t_data = {"command_type": cmd_type, "scope": scope, "query": query_str}
+        elif "Jobs" in cat:
+            t_endpoint = "/detect-respond/jobs/v4/event_export"
+            q = st.text_input("Threat Hunter Query", value="process_name: powershell.exe")
+            time_range = st.selectbox("Time Range", ["1h", "24h", "7d"])
+            t_data = {"query": q, "time_range": time_range}
+        elif "Live Response" in cat:
+            t_endpoint = "/detect-respond/live-response/v7/sessions"
+            dev_id = st.text_input("Device ID", value="device-001")
+            t_data = {"device_id": dev_id}
+        elif "Notifications" in cat:
+            t_method = "GET"
+            t_endpoint = "/detect-respond/notifications/v2/rules"
+            t_data = {}
+        elif "Policy Management" in cat:
+            t_method = "GET"
+            t_endpoint = "/common/policy-management/v2/policies"
+            t_data = {}
+        elif "Script Deobfuscation" in cat:
+            t_endpoint = "/detect-respond/script-deobfuscation/v3/reveal"
+            script = st.text_area("Script / Base64", value="powershell.exe -e aQBm...")
+            t_data = {"script": script}
+        elif "Threat Intel" in cat:
+            t_endpoint = "/common/threat-intel/v1/taxii11/discovery"
+            t_data = {}
 
-# Category 3: Device Query
-elif category == "💻 Device Query":
-    st.header("💻 Device Query")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader("Trigger Device Query (`POST /commands`)")
-        command_type = st.selectbox("Command Type", ["forensic", "artifact"])
-        query_cmd = st.text_area("Query / Command", value="SELECT * FROM processes WHERE name = 'powershell.exe';")
-        device_ids = st.text_input("Target Device IDs (カンマ区切り)", value="dev-001,dev-002")
+        # Automatically inject customer_id and domain_id if available & POST/PUT
+        if t_method in ["POST", "PUT", "PATCH"] and isinstance(t_data, dict):
+            if c_id: t_data["customer_id"] = c_id
+            if d_id: t_data["domain_id"] = d_id
+
+    with col_in2:
+        st.markdown("**生成されるプレビュー (Rawデータ / URL):**")
+        st.code(f"Endpoint: {t_endpoint}\nMethod: {t_method}\nData:\n{json.dumps(t_data, indent=2)}", language="json")
         
-        if st.button("クエリコマンド実行", key="btn_dq_trigger", use_container_width=True):
-            dev_list = [d.strip() for d in device_ids.split(",") if d.strip()]
-            # 正しいキー名 'command_type' を使用
-            make_api_request(
-                method="POST",
-                endpoint="/detect-respond/device-query/v2/commands",
-                headers={"content-type": "application/json"},
-                json_payload={
-                    "command_type": command_type,
-                    "query": query_cmd,
-                    "device_ids": dev_list
-                }
-            )
-    with col2:
-        st.markdown("""
-        <div class="help-box">
-        <h4>📌 使い方・ヘルプ</h4>
-        <p>エンドポイントに対してリアルタイムにフォレンジック調査クエリを送信します。</p>
-        </div>
-        """, unsafe_allow_html=True)
+        # COPY BUTTON TO EXECUTION BOX
+        if st.button("📥 このコマンドとデータを下の実行ボックスに移す", use_container_width=True, type="primary"):
+            st.session_state["exec_method"] = t_method
+            st.session_state["exec_endpoint"] = t_endpoint
+            st.session_state["exec_payload"] = json.dumps(t_data, indent=2)
+            st.success("実行ボックスに転送しました！下へスクロールしてください。")
 
-# Category 4: Jobs & Export
-elif category == "⚙️ Jobs & Export":
-    st.header("⚙️ Jobs & Export")
-    tab_j1, tab_j2 = st.tabs(["Start Event Export", "Get Job Status & Download"])
+st.markdown("---")
+
+# --- ALWAYS VISIBLE EXECUTION BOX (SIDE-BY-SIDE LAYOUT) ---
+st.markdown("## 🚀 共通実行ボックス (Execution Box)")
+st.markdown("どのカテゴリを選択しても、常にここにURLやリクエストデータが保持され、横並びで自由に編集・実行できます。")
+
+with st.container():
+    st.markdown('<div class="box-container">', unsafe_allow_html=True)
     
-    with tab_j1:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Start Event Export Job")
-            search_query = st.text_input("Threat Hunter Query", value="process_name: powershell.exe")
-            time_range = st.selectbox("Time Range", ["1h", "24h", "7d", "30d"])
-            
-            if st.button("エクスポートジョブ開始", key="btn_job_start", use_container_width=True):
-                make_api_request(
-                    method="POST",
-                    endpoint="/detect-respond/jobs/v4/event_export",
-                    headers={"content-type": "application/json"},
-                    json_payload={"query": search_query, "time_range": time_range}
-                )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>大量のイベントデータをバックグラウンド抽出するジョブを発行します。</p>
-            </div>
-            """, unsafe_allow_html=True)
+    # Method & Endpoint row
+    ex_col1, ex_col2 = st.columns([1, 3])
+    with ex_col1:
+        method = st.selectbox("Method", ["GET", "POST", "PUT", "DELETE", "PATCH"], index=["GET", "POST", "PUT", "DELETE", "PATCH"].index(st.session_state["exec_method"]))
+    with ex_col2:
+        endpoint = st.text_input("Endpoint Path / URL", value=st.session_state["exec_endpoint"])
 
-    with tab_j2:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Get Job Details / Download")
-            job_id = st.text_input("Job ID", value="job-12345678")
-            action = st.radio("Action", ["Check Status", "Get Download URL"])
-            
-            if st.button("実行", key="btn_job_check", use_container_width=True):
-                if action == "Check Status":
-                    make_api_request(
-                        method="GET",
-                        endpoint=f"/detect-respond/jobs/v4/jobs/{job_id}"
-                    )
+    # Side-by-side URL and Data Layout
+    exec_col_left, exec_col_right = st.columns([1, 1])
+
+    with exec_col_left:
+        st.markdown("#### 🔗 URL / Endpoint")
+        full_url_preview = f"{server_url.rstrip('/')}{endpoint}"
+        st.code(full_url_preview, language="text")
+        
+        st.markdown("#### 🔑 Request Headers")
+        headers_preview = {
+            "Authorization": f"Bearer {api_token}" if not api_token.startswith("Basic ") else api_token,
+            "content-type": "application/json"
+        }
+        st.json(headers_preview)
+
+    with exec_col_right:
+        st.markdown("#### 📦 Request Data (JSON Raw)")
+        raw_data_input = st.text_area("JSON Payload", value=st.session_state["exec_payload"], height=160)
+
+    # Execution Button
+    if st.button("⚡ 今すぐリクエストを実行する", use_container_width=True, type="primary"):
+        # Parse payload
+        payload_to_send = None
+        if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
+            try:
+                payload_to_send = json.loads(raw_data_input)
+            except Exception as e:
+                st.error(f"JSONパースエラー: {str(e)}")
+
+        # Perform Request
+        with st.spinner("API実行中..."):
+            try:
+                resp = requests.request(
+                    method=method,
+                    url=full_url_preview,
+                    headers=headers_preview,
+                    json=payload_to_send if method in ["POST", "PUT", "PATCH"] else None,
+                    timeout=30
+                )
+
+                st.markdown("---")
+                st.markdown("### 📥 実行結果 (Response & cURL)")
+                
+                # Status Badge
+                if 200 <= resp.status_code < 300:
+                    st.success(f"Status Code: {resp.status_code} OK")
                 else:
-                    make_api_request(
-                        method="GET",
-                        endpoint=f"/detect-respond/jobs/v4/jobs/{job_id}/download"
-                    )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>ジョブのステータス確認および結果ファイルのダウンロードを行います。</p>
-            </div>
-            """, unsafe_allow_html=True)
+                    st.error(f"Status Code: {resp.status_code} Error")
 
-# Category 5: Live Response
-elif category == "🔌 Live Response":
-    st.header("🔌 Live Response")
-    tab_lr1, tab_lr2 = st.tabs(["Session Management", "Command Execution"])
-    
-    with tab_lr1:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Create Live Response Session")
-            target_device = st.text_input("Device ID", value="device-998877")
-            
-            if st.button("セッション接続開始", key="btn_lr_sess", use_container_width=True):
-                make_api_request(
-                    method="POST",
-                    endpoint="/detect-respond/live-response/v7/sessions",
-                    headers={"content-type": "application/json"},
-                    json_payload={"device_id": target_device}
-                )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>リモート端末と対話型リアルタイムセッションを確立します。</p>
-            </div>
-            """, unsafe_allow_html=True)
+                res_tab1, res_tab2, res_tab3 = st.tabs(["Response Body", "Response Headers", "Actual cURL"])
+                
+                with res_tab1:
+                    try:
+                        st.json(resp.json())
+                    except Exception:
+                        st.text(resp.text)
+                        
+                with res_tab2:
+                    st.json(dict(resp.headers))
+                    
+                with res_tab3:
+                    # Generate exact cURL
+                    curl_gen = [f"curl --request {method} '{full_url_preview}'"]
+                    for hk, hv in headers_preview.items():
+                        curl_gen.append(f"  --header '{hk}: {hv}'")
+                    if payload_to_send:
+                        curl_gen.append(f"  --data '{json.dumps(payload_to_send)}'")
+                    st.code(" \\\n".join(curl_gen), language="bash")
 
-    with tab_lr2:
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.subheader("Queue Live Response Command")
-            sess_id = st.text_input("Session ID", value="sess-001")
-            lr_cmd = st.text_input("Command", value="processes")
-            
-            if st.button("コマンド送信", key="btn_lr_cmd", use_container_width=True):
-                make_api_request(
-                    method="POST",
-                    endpoint=f"/detect-respond/live-response/v7/sessions/{sess_id}/commands",
-                    headers={"content-type": "application/json"},
-                    json_payload={"command": lr_cmd}
-                )
-        with col2:
-            st.markdown("""
-            <div class="help-box">
-            <h4>📌 使い方・ヘルプ</h4>
-            <p>アクティブセッションに対して管理者コマンドをキューイングします。</p>
-            </div>
-            """, unsafe_allow_html=True)
+            except Exception as ex:
+                st.error(f"リクエスト送信失敗: {str(ex)}")
 
-# Category 6: Notifications
-elif category == "🔔 Notifications":
-    st.header("🔔 Notifications")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader("Fetch Notification Rules")
-        if st.button("通知ルール一覧取得", key="btn_notif_rules", use_container_width=True):
-            make_api_request(
-                method="GET",
-                endpoint="/detect-respond/notifications/v2/rules"
-            )
-            
-        st.markdown("---")
-        st.subheader("Search Notification History")
-        rule_id = st.text_input("Rule ID (optional)", value="")
-        if st.button("通知履歴検索", key="btn_notif_hist", use_container_width=True):
-            payload = {"rule_id": rule_id} if rule_id else {}
-            make_api_request(
-                method="POST",
-                endpoint="/detect-respond/notifications/v2/history/_search",
-                headers={"content-type": "application/json"},
-                json_payload=payload
-            )
-    with col2:
-        st.markdown("""
-        <div class="help-box">
-        <h4>📌 使い方・ヘルプ</h4>
-        <p>アラート通知ルールおよび履歴の監査を行います。</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# Category 7: Policy Management
-elif category == "📜 Policy Management":
-    st.header("📜 Policy Management")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader("List Policies")
-        if st.button("ポリシー一覧取得", key="btn_pol_list", use_container_width=True):
-            make_api_request(
-                method="GET",
-                endpoint="/common/policy-management/v2/policies"
-            )
-            
-        st.markdown("---")
-        st.subheader("Export All Policies")
-        if st.button("全ポリシー エクスポート実行", key="btn_pol_export", use_container_width=True):
-            make_api_request(
-                method="POST",
-                endpoint="/common/policy-management/v2/policies/export/all"
-            )
-    with col2:
-        st.markdown("""
-        <div class="help-box">
-        <h4>📌 使い方・ヘルプ</h4>
-        <p>セキュリティポリシーの参照および一括エクスポートを行います。</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# Category 8: Script Deobfuscation
-elif category == "🔓 Script Deobfuscation":
-    st.header("🔓 Script Deobfuscation (Reveal API)")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader("Deobfuscate PowerShell Script")
-        obfuscated_code = st.text_area(
-            "Obfuscated Script / Command",
-            value="powershell.exe -e aQBmACgAJABQAFMAVgBlAHIAcwBpAG8AbgBUAGEAYgBsAGUAKQB7AHcAcgBpAHQAZQAtAGgAbwBzAHQAIgBIAGUAbABsAG8AIgB9AA=="
-        )
-        
-        if st.button("難読化解除を実行", key="btn_deob", use_container_width=True):
-            make_api_request(
-                method="POST",
-                endpoint="/detect-respond/script-deobfuscation/v3/reveal",
-                headers={"content-type": "application/json"},
-                json_payload={"script": obfuscated_code}
-            )
-    with col2:
-        st.markdown("""
-        <div class="help-box">
-        <h4>📌 使い方・ヘルプ</h4>
-        <p>難読化されたスクリプトをMLベースで解析・解除します。</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# Category 9: Threat Intel (TAXII 1.1)
-elif category == "🌐 Threat Intel (TAXII 1.1)":
-    st.header("🌐 Threat Intel TAXII 1.1")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.subheader("TAXII Discovery Service")
-        if st.button("TAXII Discovery 実行", key="btn_taxii_disc", use_container_width=True):
-            make_api_request(
-                method="POST",
-                endpoint="/common/threat-intel/v1/taxii11/discovery"
-            )
-            
-        st.markdown("---")
-        st.subheader("List TAXII Collections")
-        if st.button("コレクション一覧取得", key="btn_taxii_coll", use_container_width=True):
-            make_api_request(
-                method="POST",
-                endpoint="/common/threat-intel/v1/taxii11/collection-management"
-            )
-    with col2:
-        st.markdown("""
-        <div class="help-box">
-        <h4>📌 使い方・ヘルプ</h4>
-        <p>STIX 1.x XML形式の脅威インテリジェンスフィードを取得します。</p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
