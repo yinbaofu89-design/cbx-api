@@ -3,6 +3,7 @@ import requests
 import json
 import base64
 
+# Streamlit Page Config
 st.set_page_config(
     page_title="CBX API Master Commander",
     page_icon="⚡",
@@ -10,6 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS
 st.markdown("""
 <style>
     .main-header { font-size: 1.8rem; font-weight: 700; color: #1E293B; margin-bottom: 0.2rem; }
@@ -18,6 +20,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Default Token
 DEFAULT_TOKEN = "TzJJRC5Xdm0xTDlUQVJ3T1pXVHpFQkJqVzB3LmY2RzhyOXhIU1Zpc3dHTUhDZF9mTVEuNWttZXFwcWw1NGFmM3JxdjZrazRiZ2gyYzA6MWU5OWhvMGNnbDdiYzBia2xuaGViaTZuZGg4dmR1dmcyaTBy"
 
 def extract_jwt_claims(token_str):
@@ -34,6 +37,7 @@ def extract_jwt_claims(token_str):
             pass
     return None, None
 
+# --- SIDEBAR ---
 st.sidebar.title("⚡ CBX Control Panel")
 st.sidebar.markdown("---")
 
@@ -64,9 +68,11 @@ if "exec_endpoint" not in st.session_state:
 if "exec_payload" not in st.session_state:
     st.session_state["exec_payload"] = json.dumps({}, indent=2)
 
+# Header
 st.markdown('<div class="main-header">⚡ CBX API Master Commander</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント対応。テンプレートから実行ボックスへのデータ転送機能付き。</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント対応。テンプレートから実行ボックスへのデータ転送機能付き。（POST時の自動付与なし）</div>', unsafe_allow_html=True)
 
+# Category selection covering ALL 11 modules
 module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
@@ -86,6 +92,7 @@ module_choice = st.selectbox(
 
 st.markdown("---")
 
+# Comprehensive Endpoint & Form Generator
 with st.container():
     st.subheader(f"📝 テンプレート設定: {module_choice}")
     
@@ -222,9 +229,9 @@ with st.container():
             if "_search" in t_endpoint:
                 t_data = {"rows": 10, "start": 0}
 
-        # NOTE: Automatic customer_id and domain_id injection has been removed per request.
+        # NOTE: Automatic customer_id and domain_id injection has been removed.
 
-with col_in2:
+    with col_in2:
         st.markdown("**生成されるプレビュー (URL / データ):**")
         preview_text = f"""Endpoint: {t_endpoint}
 Method: {t_method}
@@ -240,6 +247,7 @@ Data:
 
 st.markdown("---")
 
+# --- ALWAYS VISIBLE EXECUTION BOX ---
 st.markdown("## 🚀 共通実行ボックス (Execution Box)")
 st.markdown("下部のボックスでURLやリクエストデータを直接編集し、**cURL** や **Pythonコード** を確認しながら実行できます。")
 
@@ -273,6 +281,7 @@ with st.container():
         st.markdown("#### 📦 リクエストデータ (JSON Payload)")
         raw_data_input = st.text_area("JSON Raw Data", value=st.session_state["exec_payload"], height=160)
 
+    # Code Snippets generation tab
     st.markdown("#### 💻 リクエストコード生成 (cURL & Python)")
     snip_tab1, snip_tab2 = st.tabs(["cURL Command", "Python Code Snippet"])
     
@@ -282,25 +291,15 @@ with st.container():
             curl_parts.append(f"  --header '{hk}: {hv}'")
         if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
             curl_parts.append(f"  --data '{raw_data_input.strip()}'")
-        st.code(" \
-".join(curl_parts), language="bash")
+        st.code(" \\\n".join(curl_parts), language="bash")
 
     with snip_tab2:
-        py_code = f"import requests
-import json
-
-url = "{full_url_preview}"
-headers = {json.dumps(headers_preview, indent=4)}
-"
+        py_code = f"import requests\nimport json\n\nurl = \"{full_url_preview}\"\nheaders = {json.dumps(headers_preview, indent=4)}\n"
         if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
-            py_code += f"payload = {raw_data_input.strip()}
-response = requests.{method.lower()}(url, headers=headers, json=payload)
-"
+            py_code += f"payload = {raw_data_input.strip()}\nresponse = requests.{method.lower()}(url, headers=headers, json=payload)\n"
         else:
-            py_code += f"response = requests.{method.lower()}(url, headers=headers)
-"
-        py_code += "print(response.status_code)
-print(response.json())"
+            py_code += f"response = requests.{method.lower()}(url, headers=headers)\n"
+        py_code += "print(response.status_code)\nprint(response.json())"
         st.code(py_code, language="python")
 
     if st.button("⚡ 今すぐリクエストを実行する", use_container_width=True, type="primary"):
