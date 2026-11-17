@@ -3,6 +3,7 @@ import requests
 import json
 import base64
 import re
+import time
 from urllib.parse import urlencode, quote
 
 # Streamlit Page Config
@@ -38,6 +39,38 @@ def extract_jwt_claims(token_str):
         except Exception:
             pass
     return None, None
+
+def jwt_exp(token_str):
+    """JWT の exp（UNIX 秒）を返す。解析できなければ None"""
+    try:
+        p = (token_str or "").replace("Bearer ", "").strip().split(".")[1]
+        p += "=" * ((4 - len(p) % 4) % 4)
+        return int(json.loads(base64.urlsafe_b64decode(p).decode("utf-8")).get("exp"))
+    except Exception:
+        return None
+
+def fetch_token(base_url, basic_b64, data=None, accept="application/json"):
+    """POST /common/v1/oauth2/tokens（Method 2）。戻り値: (token, 期限UNIX秒, status, body)"""
+    r = requests.post(f"{base_url.rstrip('/')}/common/v1/oauth2/tokens",
+                      headers={"accept": accept or "application/json",
+                               "authorization": f"Basic {basic_b64}",
+                               "content-type": "application/x-www-form-urlencoded"},
+                      data=data or {"grant_type": "client_credentials", "scope": "domain"}, timeout=30)
+    try:
+        body = r.json()
+    except ValueError:
+        body = {"raw": r.text}
+    tok = body.get("access_token") if isinstance(body, dict) else None
+    exp = None
+    if r.ok and tok:
+        exp = jwt_exp(tok)
+        try:
+            exp = exp or int(time.time() + int(body.get("expires_in", 3600)))
+        except Exception:
+            exp = int(time.time() + 3600)
+    return (tok if r.ok else None), exp, r.status_code, body
+
+AUTO_REFRESH_MARGIN = 300  # 残り 5 分を切ったら自動更新
 
 def build_query(path, params):
     """None / 空文字のパラメータを除外してクエリ文字列を付与する"""
@@ -2359,8 +2392,82 @@ server_url = st.sidebar.text_input(
 client_cred = (base64.b64encode(f"{sb_client_id.strip()}:{sb_client_secret.strip()}".encode("utf-8")).decode("ascii")
                if sb_client_id.strip() and sb_client_secret.strip() else "")
 
-# 以降すべての操作で使う Bearer トークン（認証ページの『グローバル適用』で設定）
+# 自動更新（チェック時: 残り 5 分未満 / 期限切れなら操作のたびに自動で取り直す + 401 時に 1 回だけ再取得して再送）
+auto_refresh = st.sidebar.checkbox("🔄 トークンを自動更新する", value=True, key="auto_refresh",
+                                   help="チェックすると、トークンの残りが 5 分を切った時点で次の操作時に自動で再取得し、全操作に適用します。"
+                                        "API が 401 を返した場合も 1 回だけ再取得して再送します。")
+
+def refresh_global_token(reason=""):
+    """サイドバーの Client ID / Secret でトークンを再取得してグローバル適用。成功で True"""
+    if not client_cred:
+        st.session_state["auto_refresh_msg"] = ("error", "自動更新できません: Client ID / Client Secret が未入力です。")
+        return False
+    st.session_state["auto_refresh_last_try"] = time.time()
+    try:
+        _t, _e, _st, _b = fetch_token(server_url, client_cred)
+    except Exception as e:
+        st.session_state["auto_refresh_msg"] = ("error", f"自動更新に失敗しました: {e}")
+        return False
+    if _t:
+        st.session_state["global_token"] = _t
+        st.session_state["global_token_exp"] = _e
+        st.session_state["pending_token"] = _t
+        st.session_state["pending_token_exp"] = _e
+        st.session_state["auto_refresh_msg"] = ("success", f"🔄 トークンを自動更新しました（{time.strftime('%H:%M:%S')}{' / ' + reason if reason else ''}）")
+        return True
+    st.session_state["auto_refresh_msg"] = ("error", f"自動更新に失敗しました（Status: {_st}）")
+    return False
+
+def current_token_exp():
+    if st.session_state.get("global_token"):
+        return st.session_state.get("global_token_exp") or jwt_exp(st.session_state["global_token"])
+    return jwt_exp(DEFAULT_TOKEN)
+
+if auto_refresh:
+    _exp = current_token_exp()
+    _need = (_exp is None and not st.session_state.get("global_token")) or (_exp is not None and _exp - time.time() < AUTO_REFRESH_MARGIN)
+    # 失敗時に毎操作で連打しないよう、再試行は 60 秒に 1 回まで
+    if _need and time.time() - st.session_state.get("auto_refresh_last_try", 0) > 60:
+        refresh_global_token("期限が近いため")
+
+# 以降すべての操作で使う Bearer トークン（認証ページの『グローバル適用』または自動更新で設定）
 api_token = st.session_state.get("global_token") or DEFAULT_TOKEN
+
+# --- トークン残り時間（大きい太字・1秒ごとに動的更新） ---
+_exp_now = current_token_exp()
+with st.sidebar:
+    st.components.v1.html(f"""
+<div id="tk" style="font-family:'Segoe UI',sans-serif;text-align:center;padding:8px 4px;border-radius:10px;background:#f4f6fb;">
+  <div style="font-size:13px;color:#555;">🔑 Token 残り時間</div>
+  <div id="tk_t" style="font-size:38px;font-weight:800;line-height:1.2;">--:--</div>
+  <div id="tk_s" style="font-size:12px;color:#555;"></div>
+</div>
+<script>
+const exp = {json.dumps(_exp_now)};
+const auto = {json.dumps(bool(auto_refresh))};
+const margin = {AUTO_REFRESH_MARGIN};
+function pad(n){{return String(n).padStart(2,'0');}}
+function tick(){{
+  const t = document.getElementById('tk_t'), s = document.getElementById('tk_s');
+  if (exp === null) {{ t.textContent = '不明'; t.style.color = '#888'; s.textContent = '期限を判定できません'; return; }}
+  let r = Math.floor(exp - Date.now()/1000);
+  if (r <= 0) {{
+    t.textContent = '期限切れ'; t.style.color = '#d62728';
+    s.textContent = auto ? '次の操作時に自動更新します' : '🔑 Authentication で再取得してください';
+    return;
+  }}
+  const h = Math.floor(r/3600), m = Math.floor((r%3600)/60), sec = r%60;
+  t.textContent = (h > 0 ? h + ':' + pad(m) : pad(m)) + ':' + pad(sec);
+  t.style.color = r < margin ? '#d62728' : (r < 900 ? '#ff7f0e' : '#2ca02c');
+  s.textContent = r < margin ? (auto ? '残り5分未満：次の操作時に自動更新' : '残り5分未満：再取得してください')
+                             : (auto ? '自動更新: ON' : '自動更新: OFF');
+}}
+tick(); setInterval(tick, 1000);
+</script>
+""", height=110)
+_m = st.session_state.get("auto_refresh_msg")
+if _m:
+    (st.sidebar.success if _m[0] == "success" else st.sidebar.error)(_m[1])
 
 c_id, d_id = extract_jwt_claims(api_token)
 st.sidebar.markdown("---")
@@ -2475,20 +2582,12 @@ with st.container():
             def _request_token():
                 """トークンを生成し、session_state['pending_token'] に保存"""
                 try:
-                    _r = requests.post(f"{server_url.rstrip('/')}{t_endpoint}",
-                                       headers={"accept": accept_h or "application/json",
-                                                "authorization": f"Basic {basic_b64}",
-                                                "content-type": "application/x-www-form-urlencoded"},
-                                       data=t_data, timeout=30)
-                    try:
-                        _j = _r.json()
-                    except ValueError:
-                        _j = {"raw": _r.text}
-                    _tok = _j.get("access_token") if isinstance(_j, dict) else None
+                    _tok, _exp, _status, _j = fetch_token(server_url, basic_b64, data=t_data, accept=accept_h)
                     _body = {k: (f"{v[:12]}…（非表示）" if k == "access_token" else v) for k, v in _j.items()} if isinstance(_j, dict) else _j
-                    st.session_state["auth_last_result"] = {"status": _r.status_code, "ok": bool(_r.ok and _tok), "body": _body}
-                    if _r.ok and _tok:
+                    st.session_state["auth_last_result"] = {"status": _status, "ok": bool(_tok), "body": _body}
+                    if _tok:
                         st.session_state["pending_token"] = _tok
+                        st.session_state["pending_token_exp"] = _exp
                         return _tok
                 except Exception as e:
                     st.session_state["auth_last_result"] = {"status": None, "ok": False, "body": {"error": str(e)}}
@@ -2504,6 +2603,8 @@ with st.container():
                     _tok = st.session_state.get("pending_token") or _request_token()
                     if _tok:
                         st.session_state["global_token"] = _tok
+                        st.session_state["global_token_exp"] = st.session_state.get("pending_token_exp") or jwt_exp(_tok)
+                        st.session_state.pop("auto_refresh_msg", None)
                         st.session_state["exec_auth"] = "Bearer"
                         st.session_state["auth_applied_msg"] = True
                         st.rerun()
@@ -3064,6 +3165,20 @@ with st.container():
                     data=body_val if body_kind == "data" else None,
                     timeout=30
                 )
+                # 自動更新 ON + Bearer 認証で 401 → トークンを 1 回だけ再取得して再送
+                if resp.status_code == 401 and auto_refresh and auth_mode == "Bearer" and "/oauth2/tokens" not in endpoint:
+                    if refresh_global_token("401 を受信したため"):
+                        api_token = st.session_state["global_token"]
+                        headers_preview["Authorization"] = "Bearer " + api_token
+                        st.info("🔄 401 を受信したため、トークンを自動更新して 1 回だけ再送しました。")
+                        resp = requests.request(
+                            method=method,
+                            url=full_url_preview,
+                            headers=headers_preview,
+                            json=body_val if body_kind == "json" else None,
+                            data=body_val if body_kind == "data" else None,
+                            timeout=30
+                        )
 
                 st.markdown("---")
                 st.markdown("### 📥 実行結果 (Response)")
@@ -3079,6 +3194,7 @@ with st.container():
                         _rj = resp.json()
                         if isinstance(_rj, dict) and _rj.get("access_token") and "/oauth2/tokens" in endpoint and resp.ok:
                             st.session_state["pending_token"] = _rj["access_token"]
+                            st.session_state["pending_token_exp"] = jwt_exp(_rj["access_token"]) or int(time.time() + int(_rj.get("expires_in", 3600)))
                             st.info("トークンを取得しました。🔑 Authentication ページの『🌐 グローバル適用』で以降すべての操作に適用できます。")
                         st.json(_rj)
                     except Exception:
