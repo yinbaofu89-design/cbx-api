@@ -45,7 +45,7 @@ api_token = st.sidebar.text_input(
     "OAuth Bearer / Basic Token",
     value=DEFAULT_TOKEN,
     type="password",
-    help="認証トークンを入力してください。"
+    help="認証トークンを入力してください。JWTの場合、customer_idとdomain_idが自動抽出されます。"
 )
 
 server_url = st.sidebar.text_input(
@@ -61,24 +61,19 @@ st.sidebar.markdown(f"**Auto-detected Domain ID:** `{d_id or 'N/A'}`")
 st.session_state["cbx_token"] = api_token if api_token else DEFAULT_TOKEN
 st.session_state["server_url"] = server_url
 
-# Initialize session state for execution box
+# Initialize execution state
 if "exec_method" not in st.session_state:
     st.session_state["exec_method"] = "POST"
 if "exec_endpoint" not in st.session_state:
-    st.session_state["exec_endpoint"] = "/detect-respond/detection/v1/custom-detections/_search"
+    st.session_state["exec_endpoint"] = "/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary"
 if "exec_payload" not in st.session_state:
-    st.session_state["exec_payload"] = json.dumps({
-        "page": 1,
-        "size": 10,
-        "customer_id": c_id or "",
-        "domain_id": d_id or ""
-    }, indent=2)
+    st.session_state["exec_payload"] = json.dumps({"customer_id": c_id or "", "domain_id": d_id or ""}, indent=2)
 
 # Header
 st.markdown('<div class="main-header">⚡ CBX API Master Commander</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント対応。テンプレートから実行ボックスへのデータ転送機能付き。</div>', unsafe_allow_html=True)
 
-# Module Selection
+# Category selection covering ALL 11 modules
 module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
@@ -93,13 +88,12 @@ module_choice = st.selectbox(
         "🔓 Script Deobfuscation",
         "🌐 Threat Intel (TAXII 1.1)",
         "🛡️ Vulnerability Assessment"
-    ],
-    key="module_selectbox"
+    ]
 )
 
 st.markdown("---")
 
-# Template Generator form
+# Comprehensive Endpoint & Form Generator
 with st.container():
     st.subheader(f"📝 テンプレート設定: {module_choice}")
     
@@ -111,11 +105,10 @@ with st.container():
 
     with col_in1:
         if "Authentication" in module_choice:
-            op = st.selectbox("Endpoint", ["POST /common/v1/oauth2/tokens"], key="op_auth")
-            t_method = "POST"
-            t_endpoint = "/common/v1/oauth2/tokens"
-            grant_type = st.text_input("grant_type", value="client_credentials", key="auth_grant")
-            scope = st.text_input("scope", value="domain", key="auth_scope")
+            op = st.selectbox("Endpoint", ["POST /common/v1/oauth2/tokens"])
+            t_method, t_endpoint = op.split(" ", 1)
+            grant_type = st.text_input("grant_type", value="client_credentials")
+            scope = st.text_input("scope", value="domain")
             t_data = {"grant_type": grant_type, "scope": scope}
 
         elif "Custom Detections" in module_choice:
@@ -126,21 +119,20 @@ with st.container():
                 "PUT /detect-respond/detection/v1/custom-detections/{detection_id}",
                 "DELETE /detect-respond/detection/v1/custom-detections/{detection_id}",
                 "POST /detect-respond/detection/v1/custom-detections/queries/_search"
-            ], key="op_cd")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
-            
             if "{detection_id}" in t_endpoint:
-                det_id = st.text_input("detection_id", value="det-123", key="cd_det_id")
+                det_id = st.text_input("detection_id", value="det-123")
                 t_endpoint = t_endpoint.replace("{detection_id}", det_id)
 
             if "_search" in t_endpoint:
-                page = st.number_input("page", value=1, min_value=1, key="cd_page")
-                size = st.number_input("size", value=10, min_value=1, key="cd_size")
+                page = st.number_input("page", value=1, min_value=1)
+                size = st.number_input("size", value=10, min_value=1)
                 t_data = {"page": page, "size": size}
             elif t_method in ["POST", "PUT"]:
-                name = st.text_input("name", value="Sample Detection", key="cd_name")
-                desc = st.text_input("description", value="Description", key="cd_desc")
-                enabled = st.checkbox("enabled", value=True, key="cd_enabled")
+                name = st.text_input("name", value="Sample Detection")
+                desc = st.text_input("description", value="Description")
+                enabled = st.checkbox("enabled", value=True)
                 t_data = {"name": name, "description": desc, "enabled": enabled}
 
         elif "Device Query" in module_choice:
@@ -148,17 +140,16 @@ with st.container():
                 "GET /detect-respond/device-query/v2/commands",
                 "POST /detect-respond/device-query/v2/commands",
                 "GET /detect-respond/device-query/v2/commands/{commandId}"
-            ], key="op_dq")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
-            
             if "{commandId}" in t_endpoint:
-                cid = st.text_input("commandId", value="cmd-123", key="dq_cid")
+                cid = st.text_input("commandId", value="cmd-123")
                 t_endpoint = t_endpoint.replace("{commandId}", cid)
 
             if t_method == "POST" and "commands" in t_endpoint:
-                cmd_type = st.selectbox("command_type", ["forensic", "artifact"], key="dq_ctype")
-                scope = st.selectbox("scope", ["all", "device_ids"], key="dq_scope")
-                query_str = st.text_area("query", value="SELECT * FROM processes;", key="dq_q")
+                cmd_type = st.selectbox("command_type", ["forensic", "artifact"])
+                scope = st.selectbox("scope", ["all", "device_ids"])
+                query_str = st.text_area("query", value="SELECT * FROM processes;")
                 t_data = {"command_type": cmd_type, "scope": scope, "query": query_str}
 
         elif "Alerts & Threats" in module_choice:
@@ -166,67 +157,67 @@ with st.container():
                 "POST /detect-respond/alerts/v8/alerts/_search",
                 "GET /detect-respond/alerts/v8/alerts/{alert_id}",
                 "POST /detect-respond/alerts/v8/alerts/workflow"
-            ], key="op_alt")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
             if "{alert_id}" in t_endpoint:
-                aid = st.text_input("alert_id", value="alt-123", key="alt_aid")
+                aid = st.text_input("alert_id", value="alt-123")
                 t_endpoint = t_endpoint.replace("{alert_id}", aid)
             if "_search" in t_endpoint:
-                rows = st.number_input("rows", value=10, min_value=1, key="alt_rows")
+                rows = st.number_input("rows", value=10, min_value=1)
                 t_data = {"criteria": {}, "rows": rows}
             elif "workflow" in t_endpoint:
-                status = st.selectbox("status", ["RESOLVED", "CLOSED"], key="alt_status")
+                status = st.selectbox("status", ["RESOLVED", "CLOSED"])
                 t_data = {"status": status, "determination": "TRUE_POSITIVE"}
 
         elif "Jobs & Export" in module_choice:
             op = st.selectbox("Endpoint", [
                 "POST /detect-respond/jobs/v4/event_export",
                 "GET /detect-respond/jobs/v4/jobs/{job_id}"
-            ], key="op_job")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
             if "{job_id}" in t_endpoint:
-                jid = st.text_input("job_id", value="job-123", key="job_jid")
+                jid = st.text_input("job_id", value="job-123")
                 t_endpoint = t_endpoint.replace("{job_id}", jid)
             if t_method == "POST":
-                q = st.text_input("query", value="process_name: powershell.exe", key="job_q")
+                q = st.text_input("query", value="process_name: powershell.exe")
                 t_data = {"query": q, "time_range": "1h"}
 
         elif "Live Response" in module_choice:
             op = st.selectbox("Endpoint", [
                 "GET /detect-respond/live-response/v7/sessions",
                 "POST /detect-respond/live-response/v7/sessions"
-            ], key="op_lr")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
             if t_method == "POST":
-                dev_id = st.text_input("device_id", value="device-001", key="lr_dev")
+                dev_id = st.text_input("device_id", value="device-001")
                 t_data = {"device_id": dev_id}
 
         elif "Notifications" in module_choice:
             op = st.selectbox("Endpoint", [
                 "GET /detect-respond/notifications/v2/rules",
                 "POST /detect-respond/notifications/v2/rules"
-            ], key="op_notif")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
             if t_method == "POST":
-                r_name = st.text_input("Rule Name", value="Alert Rule", key="notif_name")
+                r_name = st.text_input("Rule Name", value="Alert Rule")
                 t_data = {"name": r_name, "enabled": True}
 
         elif "Policy Management" in module_choice:
             op = st.selectbox("Endpoint", [
                 "GET /common/policy-management/v2/policies",
                 "POST /common/policy-management/v2/policies/export/all"
-            ], key="op_pol")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
             t_data = {}
 
         elif "Script Deobfuscation" in module_choice:
-            op = st.selectbox("Endpoint", ["POST /detect-respond/script-deobfuscation/v3/reveal"], key="op_deob")
+            op = st.selectbox("Endpoint", ["POST /detect-respond/script-deobfuscation/v3/reveal"])
             t_method, t_endpoint = op.split(" ", 1)
-            script_b64 = st.text_area("Script / Base64", value="powershell.exe -e aQBm...", key="deob_script")
+            script_b64 = st.text_area("Script / Base64", value="powershell.exe -e aQBm...")
             t_data = {"script": script_b64}
 
         elif "Threat Intel" in module_choice:
-            op = st.selectbox("Endpoint", ["POST /common/threat-intel/v1/taxii11/discovery"], key="op_taxii")
+            op = st.selectbox("Endpoint", ["POST /common/threat-intel/v1/taxii11/discovery"])
             t_method, t_endpoint = op.split(" ", 1)
             t_data = {}
 
@@ -234,7 +225,7 @@ with st.container():
             op = st.selectbox("Endpoint", [
                 "GET /endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary",
                 "POST /endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/_search"
-            ], key="op_vuln")
+            ])
             t_method, t_endpoint = op.split(" ", 1)
             if "_search" in t_endpoint:
                 t_data = {"rows": 10, "start": 0}
@@ -249,8 +240,8 @@ with st.container():
         preview_text = f"Endpoint: {t_endpoint}\nMethod: {t_method}\nData:\n{json.dumps(t_data, indent=2)}"
         st.code(preview_text, language="json")
         
-        # 転送ボタンのクリック処理を確実に検知・実行
-        if st.button("📥 実行ボックスにこの設定を転送する", use_container_width=True, type="primary", key="btn_transfer"):
+        # 転送ボタンのクリック処理 (st.rerun() で確実に反映)
+        if st.button("📥 実行ボックスにこの設定を転送する", use_container_width=True, type="primary"):
             st.session_state["exec_method"] = t_method
             st.session_state["exec_endpoint"] = t_endpoint
             st.session_state["exec_payload"] = json.dumps(t_data, indent=2)
@@ -258,7 +249,7 @@ with st.container():
 
 st.markdown("---")
 
-# --- ALWAYS VISIBLE EXECUTION BOX ---
+# --- ALWAYS VISIBLE EXECUTION BOX (NO KEYS TO AVOID STATE CONFLICTS) ---
 st.markdown("## 🚀 共通実行ボックス (Execution Box)")
 st.markdown("下部のボックスでURLやリクエストデータを直接編集し、**cURL** や **Pythonコード** を確認しながら実行できます。")
 
@@ -270,9 +261,9 @@ with st.container():
         methods_list = ["GET", "POST", "PUT", "DELETE", "PATCH"]
         curr_m = st.session_state["exec_method"]
         m_index = methods_list.index(curr_m) if curr_m in methods_list else 0
-        method = st.selectbox("Method", methods_list, index=m_index, key="box_method")
+        method = st.selectbox("Method", methods_list, index=m_index)
     with ex_col2:
-        endpoint = st.text_input("Endpoint Path / URL", value=st.session_state["exec_endpoint"], key="box_endpoint")
+        endpoint = st.text_input("Endpoint Path / URL", value=st.session_state["exec_endpoint"])
 
     full_url_preview = f"{server_url.rstrip('/')}{endpoint}"
     headers_preview = {
@@ -290,7 +281,7 @@ with st.container():
 
     with exec_col_right:
         st.markdown("#### 📦 リクエストデータ (JSON Payload)")
-        raw_data_input = st.text_area("JSON Raw Data", value=st.session_state["exec_payload"], height=160, key="box_payload_input")
+        raw_data_input = st.text_area("JSON Raw Data", value=st.session_state["exec_payload"], height=160)
 
     # Code Snippets generation tab
     st.markdown("#### 💻 リクエストコード生成 (cURL & Python)")
@@ -313,7 +304,7 @@ with st.container():
         py_code += "print(response.status_code)\nprint(response.json())"
         st.code(py_code, language="python")
 
-    if st.button("⚡ 今すぐリクエストを実行する", use_container_width=True, type="primary", key="btn_execute"):
+    if st.button("⚡ 今すぐリクエストを実行する", use_container_width=True, type="primary"):
         payload_to_send = None
         if method in ["POST", "PUT", "PATCH"] and raw_data_input.strip():
             try:
