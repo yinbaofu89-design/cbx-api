@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 import json
 import base64
@@ -2374,6 +2375,983 @@ TAXII11_HEADERS = {
     "Accept": "application/xml",
 }
 
+# =====================================================================
+# 📊 ダッシュボード（管理クライアント / 脆弱性レポート / 攻撃フォロー）
+#   - データ取得は Python 側（グローバル適用トークン / 401 時は自動更新に連動）
+#   - 描画はブラウザ側（globe.gl / 3d-force-graph / ECharts を CDN から読み込み）
+# =====================================================================
+DASH_CLIENT = "📊 管理クライアント ダッシュボード"
+DASH_VULN = "🧯 脆弱性レポート ダッシュボード"
+DASH_ATTACK = "⚔️ 攻撃フォロー ダッシュボード"
+DASHBOARD_NAMES = [DASH_CLIENT, DASH_VULN, DASH_ATTACK]
+
+# 国コード → (緯度, 経度, 日本語名)
+COUNTRY_GEO = {
+    "jp": (36.2, 138.3, "日本"), "us": (39.8, -98.6, "米国"), "cn": (35.9, 104.2, "中国"), "kr": (36.5, 127.9, "韓国"),
+    "tw": (23.7, 121.0, "台湾"), "hk": (22.3, 114.2, "香港"), "sg": (1.35, 103.8, "シンガポール"), "in": (21.0, 78.0, "インド"),
+    "th": (15.9, 100.9, "タイ"), "vn": (14.1, 108.3, "ベトナム"), "my": (4.2, 102.0, "マレーシア"), "id": (-2.5, 118.0, "インドネシア"),
+    "ph": (12.9, 121.8, "フィリピン"), "au": (-25.3, 133.8, "オーストラリア"), "nz": (-41.0, 174.0, "ニュージーランド"),
+    "gb": (54.0, -2.0, "英国"), "ie": (53.4, -8.2, "アイルランド"), "fr": (46.6, 2.2, "フランス"), "de": (51.2, 10.4, "ドイツ"),
+    "nl": (52.1, 5.3, "オランダ"), "be": (50.5, 4.5, "ベルギー"), "ch": (46.8, 8.2, "スイス"), "at": (47.5, 14.6, "オーストリア"),
+    "it": (41.9, 12.6, "イタリア"), "es": (40.5, -3.7, "スペイン"), "pt": (39.4, -8.2, "ポルトガル"), "se": (60.1, 18.6, "スウェーデン"),
+    "no": (60.5, 8.5, "ノルウェー"), "fi": (61.9, 25.7, "フィンランド"), "dk": (56.3, 9.5, "デンマーク"), "pl": (51.9, 19.1, "ポーランド"),
+    "cz": (49.8, 15.5, "チェコ"), "ro": (45.9, 24.9, "ルーマニア"), "ua": (48.4, 31.2, "ウクライナ"), "ru": (61.5, 105.3, "ロシア"),
+    "tr": (39.0, 35.2, "トルコ"), "il": (31.0, 34.9, "イスラエル"), "ae": (23.4, 53.8, "UAE"), "sa": (23.9, 45.1, "サウジアラビア"),
+    "ir": (32.4, 53.7, "イラン"), "kp": (40.3, 127.5, "北朝鮮"), "eg": (26.8, 30.8, "エジプト"), "za": (-30.6, 22.9, "南アフリカ"),
+    "ng": (9.1, 8.7, "ナイジェリア"), "ke": (-0.02, 37.9, "ケニア"), "br": (-14.2, -51.9, "ブラジル"), "ar": (-38.4, -63.6, "アルゼンチン"),
+    "cl": (-35.7, -71.5, "チリ"), "mx": (23.6, -102.6, "メキシコ"), "ca": (56.1, -106.3, "カナダ"), "co": (4.6, -74.3, "コロンビア"),
+    "pk": (30.4, 69.3, "パキスタン"), "bd": (23.7, 90.4, "バングラデシュ"),
+}
+# OS 言語コード → 国（en など複数国にまたがる言語は推定しない）
+LANG_COUNTRY = {"ja": "jp", "ko": "kr", "zh": "cn", "de": "de", "fr": "fr", "it": "it", "es": "es", "pt": "br", "nl": "nl",
+                "sv": "se", "fi": "fi", "da": "dk", "no": "no", "nb": "no", "pl": "pl", "cs": "cz", "ru": "ru", "tr": "tr",
+                "th": "th", "vi": "vn", "id": "id", "ms": "my", "he": "il", "ar": "sa", "uk": "ua", "ro": "ro"}
+# UTC オフセット（分, 東が正）→ 代表国
+TZ_COUNTRY = {540: "jp", 480: "cn", 420: "th", 330: "in", 300: "pk", 240: "ae", 180: "ru", 120: "fi", 60: "de", 0: "gb",
+              -180: "br", -240: "ca", -300: "us", -360: "us", -420: "us", -480: "us", 600: "au", 720: "nz", 570: "au", 345: "in"}
+
+DASH_CSS = """
+<style>
+  body{margin:0;background:#050a18;color:#dbe7ff;font-family:'Segoe UI','Yu Gothic UI',sans-serif;}
+  .wrap{padding:10px 12px;}
+  .title{font-size:22px;font-weight:800;letter-spacing:.5px;background:linear-gradient(90deg,#4fd1ff,#a96bff);-webkit-background-clip:text;color:transparent;}
+  .sub{font-size:12px;color:#8aa0c8;margin-bottom:8px;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 12px;}
+  .kpi{background:linear-gradient(145deg,#0c1631,#0a1024);border:1px solid #1d2c55;border-radius:12px;padding:10px 12px;box-shadow:0 0 18px rgba(79,209,255,.08) inset;}
+  .kpi .l{font-size:12px;color:#8aa0c8}.kpi .v{font-size:30px;font-weight:800;line-height:1.15}
+  .card{background:#0a1226;border:1px solid #1b2a52;border-radius:12px;padding:8px 10px;}
+  .card h4{margin:2px 0 6px;font-size:14px;color:#9fc3ff}
+  .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:10px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:#7f95c2;text-align:left;font-weight:600;border-bottom:1px solid #1b2a52;padding:4px}
+  td{padding:4px;border-bottom:1px solid #111d3b}
+  .flag{width:22px;height:15px;border-radius:2px;vertical-align:middle;margin-right:5px;box-shadow:0 0 3px #000}
+  .bar{height:8px;border-radius:4px;background:#14234a;overflow:hidden}.bar>i{display:block;height:100%}
+  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700}
+  .scroll{max-height:360px;overflow:auto}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,45,85,.7)}70%{box-shadow:0 0 0 14px rgba(255,45,85,0)}100%{box-shadow:0 0 0 0 rgba(255,45,85,0)}}
+  @keyframes blink{50%{opacity:.35}}
+  @keyframes scan{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes ticker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+</style>
+"""
+
+def _flag_img(cc):
+    return f'<img class="flag" src="https://flagcdn.com/w40/{cc}.png" onerror="this.style.display=\'none\'">' if cc else ""
+
+def dash_api(method, path, params=None, body=None):
+    """ダッシュボード用 API 呼び出し（Bearer = グローバル適用トークン / 自動更新 ON なら 401 時に 1 回再取得）"""
+    url = f"{server_url.rstrip('/')}{path}"
+    def _do():
+        h = {"Authorization": "Bearer " + (st.session_state.get("global_token") or api_token),
+             "accept": "application/json", "content-type": "application/json"}
+        return requests.request(method, url, headers=h, params=params, json=body if method != "GET" else None, timeout=30)
+    r = _do()
+    if r.status_code == 401 and st.session_state.get("auto_refresh") and refresh_global_token("ダッシュボードで 401 を受信"):
+        r = _do()
+    try:
+        data = r.json()
+    except ValueError:
+        data = {"raw": r.text[:2000]}
+    return r.status_code, data
+
+def _find_records(obj):
+    """レスポンス中の最大の「dict の配列」を返す（スキーマ差異に強くするため）"""
+    best = []
+    def walk(o):
+        nonlocal best
+        if isinstance(o, list):
+            if o and all(isinstance(x, dict) for x in o) and len(o) > len(best):
+                best = o
+            for x in o:
+                walk(x)
+        elif isinstance(o, dict):
+            for v in o.values():
+                walk(v)
+    walk(obj)
+    return best
+
+def _flat(d, prefix=""):
+    out = {}
+    if isinstance(d, dict):
+        for k, v in d.items():
+            key = f"{prefix}{k}".lower()
+            if isinstance(v, dict):
+                out.update(_flat(v, key + "."))
+            else:
+                out[key] = v
+    return out
+
+def _pick(rec, names, contains=None, numeric=False):
+    f = _flat(rec)
+    for n in names:
+        for k, v in f.items():
+            if k == n or k.endswith("." + n):
+                if not numeric or isinstance(v, (int, float)):
+                    return v
+    if contains:
+        for k, v in f.items():
+            if all(c in k for c in contains) and (not numeric or isinstance(v, (int, float))):
+                return v
+    return None
+
+SEV_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"]
+
+def _norm_sev(v):
+    s = str(v or "").upper()
+    for x in SEV_ORDER:
+        if x in s:
+            return x
+    if s in ("INFO", "INFORMATIONAL", "UNKNOWN", ""):
+        return "NONE"
+    try:  # CVSS 数値
+        f = float(s)
+        return "CRITICAL" if f >= 9 else "HIGH" if f >= 7 else "MEDIUM" if f >= 4 else "LOW" if f > 0 else "NONE"
+    except ValueError:
+        return "NONE"
+
+def _severity_counts(obj):
+    """サマリーレスポンスから深刻度別件数を抽出（キー名 / 配列のどちらの形式にも対応）"""
+    counts = {s: 0 for s in SEV_ORDER}
+    found = False
+    def walk(o):
+        nonlocal found
+        if isinstance(o, dict):
+            sev_key = next((k for k in o if k.lower() in ("severity", "sev", "level", "name", "key")), None)
+            cnt_key = next((k for k in o if k.lower() in ("count", "total", "value", "doc_count", "vulnerability_count")), None)
+            if sev_key and cnt_key and isinstance(o[cnt_key], (int, float)) and _norm_sev(o[sev_key]) != "NONE":
+                counts[_norm_sev(o[sev_key])] += int(o[cnt_key]); found = True
+                return
+            for k, v in o.items():
+                kk = k.upper()
+                if isinstance(v, (int, float)) and any(kk == s or kk.startswith(s + "_") or kk.endswith("_" + s) for s in SEV_ORDER[:4]):
+                    counts[_norm_sev(kk)] += int(v); found = True
+                else:
+                    walk(v)
+        elif isinstance(o, list):
+            for x in o:
+                walk(x)
+    walk(obj)
+    return counts if found else None
+
+def _risk10(v):
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return round(f / 10.0, 1) if f > 10 else round(f, 1)
+
+def _guess_country(dev, overrides, tz_sign):
+    hay = " ".join(str(x) for x in [dev.get("device_name"), dev.get("parent_device_group_name"), dev.get("path"),
+                                    " ".join(dev.get("dns_names") or [])]).lower()
+    for pat, cc in overrides:
+        if pat and pat in hay:
+            return cc, "指定"
+    for n in (dev.get("dns_names") or []) + [dev.get("host") or ""]:
+        tld = str(n).rstrip(".").rsplit(".", 1)[-1].lower()
+        if tld in COUNTRY_GEO and tld not in ("us",):
+            return tld, "ドメイン"
+    lang = str((dev.get("os") or {}).get("lang") or "").lower()[:2]
+    if lang in LANG_COUNTRY:
+        return LANG_COUNTRY[lang], "OS言語"
+    tz = (dev.get("os") or {}).get("tz_offset")
+    if isinstance(tz, (int, float)):
+        cc = TZ_COUNTRY.get(int(tz) * tz_sign)
+        if cc:
+            return cc, "タイムゾーン"
+    return None, "不明"
+
+def _status_risk(dev):
+    s = str(dev.get("security_status") or "").upper()
+    base = {"COMPROMISED": 9.5, "AT_RISK": 7.0, "UNKNOWN": 4.0, "NOT_COMPUTED": 3.5, "INITIALIZING": 3.0, "UNENROLLED": 5.0, "SECURE": 1.0}.get(s, 3.0)
+    if str(dev.get("connection_status") or "").upper() == "OFFLINE":
+        base = min(10.0, base + 1.0)
+    return base
+
+# ---------------- デモデータ ----------------
+def _demo_devices():
+    import random
+    rnd = random.Random(7)
+    sites = [("jp", "Tokyo-HQ", 38), ("jp", "Osaka-Branch", 14), ("us", "US-SanJose", 12), ("sg", "APAC-Singapore", 9),
+             ("de", "EU-Frankfurt", 8), ("cn", "CN-Shanghai", 6), ("in", "IN-Bangalore", 7), ("gb", "UK-London", 4), ("au", "AU-Sydney", 3)]
+    types = ["WINDOWS_WORKSTATION"] * 6 + ["WINDOWS_SERVER"] * 2 + ["MAC_WORKSTATION", "LINUX_SERVER"]
+    devs = []
+    for cc, grp, n in sites:
+        for i in range(n):
+            st_ = rnd.choices(["SECURE", "AT_RISK", "COMPROMISED", "NOT_COMPUTED"], [70, 22, 3, 5])[0]
+            t = rnd.choice(types)
+            risk = round(min(10, max(0, rnd.gauss(4.5 if st_ == "SECURE" else 7.8, 1.8))), 1)
+            devs.append({"device_id": f"demo{cc}{i:03d}", "device_name": f"{grp.split('-')[0].lower()}-{t.split('_')[0][:3].lower()}-{i:03d}",
+                         "parent_device_group_name": grp, "security_status": st_,
+                         "connection_status": rnd.choices(["ONLINE", "OFFLINE"], [85, 15])[0],
+                         "os": {"type": t, "device_os": {"WINDOWS": "Windows", "MAC": "Mac OS X", "LINUX": "Linux"}[t.split("_")[0]]},
+                         "_cc": cc, "_risk": risk, "_vulns": int(max(0, rnd.gauss(risk * 6, 8)))})
+    return devs
+
+def _demo_vulns():
+    import random
+    rnd = random.Random(11)
+    soft = ["Google Chrome", "Microsoft Edge", "OpenSSL", "Apache Log4j", "Microsoft Office", "Adobe Acrobat Reader", "Zoom Client",
+            "Java SE", "7-Zip", "Windows Kernel", "Mozilla Firefox", "Python", "Node.js", "VMware Tools", "Citrix Workspace"]
+    out = []
+    for i in range(48):
+        cvss = round(min(10, max(2, rnd.gauss(6.8, 1.9))), 1)
+        out.append({"cve_id": f"CVE-202{rnd.randint(3, 6)}-{rnd.randint(1000, 49999)}", "severity": _norm_sev(cvss),
+                    "risk_score": round(min(10, cvss + rnd.uniform(-1, 1.2)), 1), "cvss": cvss,
+                    "affected_devices": int(max(1, rnd.expovariate(1 / 12))), "software": rnd.choice(soft),
+                    "exploited": rnd.random() < 0.18})
+    out.sort(key=lambda x: (-x["risk_score"], -x["affected_devices"]))
+    return out
+
+def _demo_attack():
+    f1 = "eec3f761f7eabe9ed569f39e896be24c9bbb8861b15dbde1b3d539505cd9dd8d"
+    f2 = "f6afa84b0847414220bb15517b8b5e2c505b64b53efbba73b753379c66ac5017"
+    return {
+        "insights": [
+            {"kind": "file", "id": f1, "reputation": "BAD", "reputation_confidence": 100, "first_seen": "2024-05-22", "last_seen": "2025-09-24",
+             "prevalence": "LessThanFifty", "actors": ["Snakefly"], "target_orgs": {"top_countries": ["us", "in", "jp", "de"], "top_industries": ["Government", "Information Technology"]}},
+            {"kind": "file", "id": f2, "reputation": "BAD", "reputation_confidence": 96, "first_seen": "2024-11-02", "last_seen": "2025-10-30",
+             "prevalence": "Hundreds", "actors": ["Clop"], "target_orgs": {"top_countries": ["us", "gb", "jp", "au"], "top_industries": ["Manufacturing", "Retail"]}},
+            {"kind": "network", "id": "145.249.105.165", "reputation": "BAD", "reputation_confidence": 98, "first_seen": "2023-03-14", "last_seen": "2025-11-01",
+             "threat_risk_level": {"level": 9}, "actors": ["Snakefly"], "target_orgs": {"top_countries": ["us", "sg", "jp"], "top_industries": ["Financial Services"]}},
+            {"kind": "network", "id": "nicolascoolman.eu", "reputation": "BAD", "reputation_confidence": 90, "first_seen": "2024-01-08", "last_seen": "2025-08-19",
+             "threat_risk_level": {"level": 7}, "actors": ["Snakefly"], "target_orgs": {"top_countries": ["fr", "de", "jp"], "top_industries": ["Healthcare"]}},
+            {"kind": "network", "id": "115.55.57.208", "reputation": "BAD", "reputation_confidence": 100, "first_seen": "2020-07-21", "last_seen": "2025-01-30",
+             "threat_risk_level": {"level": 6}, "actors": ["Waterbug"], "target_orgs": {"top_countries": ["us", "kr"], "top_industries": ["Information Technology"]}},
+        ],
+        "related": [
+            {"from": f1, "ioc_type": "network", "ioc_values": ["nicolascoolman.eu", "145.249.105.165"], "relation": "byThreatActor"},
+            {"from": f1, "ioc_type": "file", "ioc_values": [f2], "relation": "bySignature"},
+            {"from": "145.249.105.165", "ioc_type": "file", "ioc_values": [f1], "relation": "bySignature"},
+            {"from": f2, "ioc_type": "network", "ioc_values": ["115.55.57.208"], "relation": "byNetworkTrait"},
+            {"from": "115.55.57.208", "ioc_type": "file", "ioc_values": ["9b1c7e0d4a2f6e8b3c5d7a9e1f2b4c6d8e0a1b3c5d7e9f1a2b4c6d8e0f1a2b3c"], "relation": "byIncident"},
+        ],
+        "chains": [
+            {"file": f1, "parent": {"file": "a732df0b1b4b4b8dbf5dc2c9286c212cb172d29ddfa88a2c5e5e9f84ec0d5380", "process_name": "winlogon.exe"},
+             "child": {"file": f1, "process_name": "malware.exe"}},
+            {"file": f1, "parent": {"file": "1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e", "process_name": "explorer.exe"},
+             "child": {"file": "a732df0b1b4b4b8dbf5dc2c9286c212cb172d29ddfa88a2c5e5e9f84ec0d5380", "process_name": "powershell.exe"}},
+            {"file": f2, "parent": {"file": "4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d", "process_name": "outlook.exe"},
+             "child": {"file": f2, "process_name": "invoice_viewer.exe"}},
+        ],
+        "origins": {"145.249.105.165": "nl", "115.55.57.208": "cn", "nicolascoolman.eu": "ru"},
+    }
+
+def _dash_header(title, sub):
+    st.markdown(f"### {title}")
+    st.caption(sub)
+
+def _dash_source(key):
+    """データソース選択（ライブは認証済みのときのみ）"""
+    authed = bool(st.session_state.get("global_token"))
+    if authed:
+        st.success("🔓 トークン認証済み（グローバル適用中）— ライブデータを取得できます。")
+    else:
+        st.warning("🔒 トークン未認証です。🔑 Authentication ページで『🌐 グローバル適用』を行うと、ライブデータを取得できます（それまではデモデータで表示）。")
+    src = st.radio("データソース", ["ライブ（CBX API）", "デモデータ"], index=0 if authed else 1, horizontal=True, key=f"{key}_src")
+    if src.startswith("ライブ") and not authed:
+        st.error("トークン認証後に利用できます。デモデータで表示します。")
+        return "demo"
+    return "live" if src.startswith("ライブ") else "demo"
+
+def _render_html(html, height):
+    components.html(DASH_CSS + html, height=height, scrolling=True)
+
+# ---------------- ① 管理クライアント ----------------
+def render_dash_client():
+    _dash_header("📊 管理クライアント ダッシュボード", "デバイス（資産）× リスクスコア × 拠点（国旗）を 3D 地球儀で可視化")
+    src = _dash_source("dc")
+    with st.expander("⚙️ 取得設定 / 拠点（国）の推定ルール", expanded=False):
+        max_dev = st.number_input("最大取得デバイス数", min_value=100, max_value=10000, value=1000, step=100, key="dc_max")
+        use_vuln = st.checkbox("脆弱性サマリー（デバイス別の最高リスクスコア・脆弱性数）を取得する", value=True, key="dc_vuln")
+        vuln_body = st.text_area("POST .../devices/vulnerabilities/summary/_search の Body（JSON）", value="{}", height=70, key="dc_vbody")
+        tz_sign = 1 if st.radio("os.tz_offset の符号", ["UTC+ が正（例: 日本 = 540）", "UTC+ が負（例: 日本 = -540）"], key="dc_tz").startswith("UTC+ が正") else -1
+        ov_txt = st.text_area("拠点の指定（1行に『キーワード=国コード』。デバイス名 / グループ名 / パス / DNS に部分一致）",
+                              value="tokyo=jp\nosaka=jp\njapan=jp", height=90, key="dc_ov")
+        st.caption("国の推定順: ①上記の指定 → ②DNS 名の国別ドメイン（.jp 等）→ ③OS 言語 → ④タイムゾーン。API に位置情報がないため推定値です。")
+        home_cc = st.text_input("自社拠点（未判定デバイスの表示先）国コード", value="jp", key="dc_home").strip().lower() or "jp"
+    overrides = [tuple(x.strip().lower() for x in l.split("=", 1)) for l in ov_txt.splitlines() if "=" in l]
+
+    if src == "live":
+        if st.button("🔄 再取得", key="dc_fetch") or "dc_data" not in st.session_state:  # 開いた瞬間に自動取得
+            devs, page, errs = [], 1, []
+            with st.spinner("デバイス一覧を取得中..."):
+                while len(devs) < max_dev:
+                    code, data = dash_api("GET", "/agent-management/devices/v2/devices",
+                                          params={"page": page, "page_size": min(1000, int(max_dev)), "include_path": "true"})
+                    if code != 200:
+                        errs.append(f"devices: Status {code} {str(data)[:200]}"); break
+                    batch = data.get("devices") or []
+                    devs += batch
+                    if not batch or page >= int(data.get("total_pages") or 1):
+                        break
+                    page += 1
+            vmap = {}
+            if use_vuln:
+                try:
+                    vb = json.loads(vuln_body or "{}")
+                except Exception as e:
+                    vb = {}; errs.append(f"Body の JSON が不正です: {e}")
+                with st.spinner("デバイス別の脆弱性サマリーを取得中..."):
+                    code, vdata = dash_api("POST", "/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/summary/_search", body=vb)
+                if code == 200:
+                    for r in _find_records(vdata):
+                        did = _pick(r, ["device_uid", "device_id", "uid", "id"])
+                        nm = _pick(r, ["device_name", "name", "host"])
+                        rs = _pick(r, ["highest_risk_score", "max_risk_score", "risk_score"], contains=["risk"], numeric=True)
+                        vc = _pick(r, ["vulnerability_count", "vuln_count", "total_vulnerabilities", "count"], contains=["vuln"], numeric=True)
+                        for key in (did, nm):
+                            if key:
+                                vmap[str(key).lower()] = (rs, vc)
+                else:
+                    errs.append(f"vulnerability summary: Status {code} {str(vdata)[:200]}")
+            st.session_state["dc_data"] = {"devs": devs, "vmap": vmap, "errs": errs, "at": time.strftime("%H:%M:%S")}
+        cache = st.session_state.get("dc_data", {"devs": [], "vmap": {}, "errs": []})
+        for e in cache.get("errs", []):
+            st.error(e)
+        devs = cache["devs"]
+        rows = []
+        for d in devs:
+            v = cache["vmap"].get(str(d.get("device_id", "")).lower()) or cache["vmap"].get(str(d.get("device_name", "")).lower()) or (None, None)
+            cc, how = _guess_country(d, overrides, tz_sign)
+            r10 = _risk10(v[0])
+            rows.append({"name": d.get("device_name") or d.get("host") or d.get("device_id"), "group": d.get("parent_device_group_name") or "",
+                         "status": d.get("security_status") or "", "conn": d.get("connection_status") or "",
+                         "ostype": ((d.get("os") or {}).get("type") or "UNKNOWN"), "os": (d.get("os") or {}).get("device_os") or "",
+                         "cc": cc or home_cc, "cc_how": how if cc else "既定", "risk": r10 if r10 is not None else _status_risk(d),
+                         "risk_src": "脆弱性" if r10 is not None else "状態から推定", "vulns": int(v[1]) if isinstance(v[1], (int, float)) else None})
+        if cache.get("at"):
+            st.caption(f"取得時刻: {cache['at']} / デバイス {len(rows)} 台")
+    else:
+        rows = [{"name": d["device_name"], "group": d["parent_device_group_name"], "status": d["security_status"], "conn": d["connection_status"],
+                 "ostype": d["os"]["type"], "os": d["os"]["device_os"], "cc": d["_cc"], "cc_how": "デモ", "risk": d["_risk"],
+                 "risk_src": "デモ", "vulns": d["_vulns"]} for d in _demo_devices()]
+
+    if not rows:
+        st.info("表示するデバイスがありません。")
+        return
+
+    # 集計
+    by_cc = {}
+    for r in rows:
+        c = by_cc.setdefault(r["cc"], {"cc": r["cc"], "n": 0, "risk_sum": 0, "max": 0, "atrisk": 0, "online": 0})
+        c["n"] += 1; c["risk_sum"] += r["risk"]; c["max"] = max(c["max"], r["risk"])
+        c["atrisk"] += r["status"] in ("AT_RISK", "COMPROMISED"); c["online"] += r["conn"] == "ONLINE"
+    countries = []
+    for c in by_cc.values():
+        g = COUNTRY_GEO.get(c["cc"], (0, 0, c["cc"].upper()))
+        countries.append({**c, "avg": round(c["risk_sum"] / c["n"], 1), "lat": g[0], "lng": g[1], "label": g[2]})
+    countries.sort(key=lambda x: -x["n"])
+    status_cnt, os_cnt = {}, {}
+    for r in rows:
+        status_cnt[r["status"] or "UNKNOWN"] = status_cnt.get(r["status"] or "UNKNOWN", 0) + 1
+        os_cnt[r["ostype"]] = os_cnt.get(r["ostype"], 0) + 1
+    top = sorted(rows, key=lambda r: -r["risk"])[:40]
+    n = len(rows)
+    kpi = {"total": n, "online": sum(r["conn"] == "ONLINE" for r in rows),
+           "atrisk": sum(r["status"] in ("AT_RISK", "COMPROMISED") for r in rows),
+           "comp": sum(r["status"] == "COMPROMISED" for r in rows),
+           "avg": round(sum(r["risk"] for r in rows) / n, 1), "high": sum(r["risk"] >= 7 for r in rows), "countries": len(countries)}
+
+    def rc(v):
+        return "#ff2d55" if v >= 9 else "#ff7a1a" if v >= 7 else "#ffd23f" if v >= 4 else "#2ee6a6"
+    trs = "".join(
+        f"<tr><td>{_flag_img(r['cc'])}{r['name']}</td><td>{r['group']}</td><td>{r['os']}</td>"
+        f"<td><span class='pill' style='background:{'#3a0d18' if r['status'] in ('AT_RISK','COMPROMISED') else '#0d3a2b'};color:{'#ff6b8a' if r['status'] in ('AT_RISK','COMPROMISED') else '#5ff0b8'}'>{r['status']}</span></td>"
+        f"<td>{'🟢' if r['conn']=='ONLINE' else '⚫'}</td>"
+        f"<td style='min-width:110px'><b style='color:{rc(r['risk'])}'>{r['risk']:.1f}</b> <div class='bar'><i style='width:{r['risk']*10}%;background:{rc(r['risk'])}'></i></div></td>"
+        f"<td>{'' if r['vulns'] is None else r['vulns']}</td></tr>" for r in top)
+    crs = "".join(
+        f"<tr><td>{_flag_img(c['cc'])}{c['label']}</td><td>{c['n']}</td><td style='color:{rc(c['avg'])}'><b>{c['avg']}</b></td>"
+        f"<td style='color:{rc(c['max'])}'>{c['max']}</td><td>{c['atrisk']}</td></tr>" for c in countries)
+    payload = json.dumps({"countries": countries, "status": status_cnt, "os": os_cnt}, ensure_ascii=False)
+    html = """
+<div class="wrap">
+ <div class="title">GLOBAL ENDPOINT RISK MAP</div><div class="sub">拠点ごとの柱の高さ = デバイス数 / 色 = 平均リスクスコア（0–10）。ドラッグで回転・ホイールでズーム</div>
+ <div class="kpis">
+  <div class="kpi"><div class="l">管理デバイス</div><div class="v" style="color:#4fd1ff">__TOTAL__</div></div>
+  <div class="kpi"><div class="l">オンライン</div><div class="v" style="color:#2ee6a6">__ONLINE__</div></div>
+  <div class="kpi" style="__ATRISK_STYLE__"><div class="l">AT_RISK / COMPROMISED</div><div class="v" style="color:#ff6b8a">__ATRISK__ <span style="font-size:14px">(侵害 __COMP__)</span></div></div>
+  <div class="kpi"><div class="l">高リスク（≥7.0）</div><div class="v" style="color:#ff7a1a">__HIGH__</div></div>
+  <div class="kpi"><div class="l">平均リスクスコア</div><div class="v" style="color:__AVGC__">__AVG__</div></div>
+  <div class="kpi"><div class="l">拠点（国）</div><div class="v" style="color:#a96bff">__CTRY__</div></div>
+ </div>
+ <div class="grid2">
+  <div class="card"><h4>🌐 3D リスク地球儀</h4><div id="globe" style="height:470px"></div></div>
+  <div class="card"><h4>🏳️ 拠点別リスク</h4><div class="scroll" style="max-height:470px"><table><tr><th>拠点</th><th>台数</th><th>平均</th><th>最大</th><th>要注意</th></tr>__CROWS__</table></div></div>
+ </div>
+ <div class="grid3" style="margin-top:10px">
+  <div class="card"><h4>🛡️ セキュリティ状態</h4><div id="st" style="height:250px"></div></div>
+  <div class="card"><h4>💻 OS タイプ</h4><div id="os" style="height:250px"></div></div>
+  <div class="card"><h4>📶 リスク分布（3D）</h4><div id="r3" style="height:250px"></div></div>
+ </div>
+ <div class="card" style="margin-top:10px"><h4>🔥 高リスク デバイス TOP 40</h4><div class="scroll"><table>
+  <tr><th>デバイス</th><th>グループ</th><th>OS</th><th>状態</th><th>接続</th><th>リスク</th><th>脆弱性数</th></tr>__TROWS__</table></div></div>
+</div>
+<script src="https://unpkg.com/globe.gl"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+<script>
+const D = __DATA__;
+const rc = v => v>=9?'#ff2d55':v>=7?'#ff7a1a':v>=4?'#ffd23f':'#2ee6a6';
+try {
+  const maxN = Math.max(...D.countries.map(c=>c.n));
+  const g = Globe()(document.getElementById('globe'))
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .width(document.getElementById('globe').clientWidth).height(470)
+    .pointsData(D.countries).pointLat('lat').pointLng('lng')
+    .pointAltitude(c => 0.05 + 0.45*c.n/maxN).pointRadius(1.2).pointColor(c => rc(c.avg))
+    .pointLabel(c => `<div style="background:#0a1226ee;padding:6px 8px;border:1px solid #2b4a8a;border-radius:6px">
+        <img src="https://flagcdn.com/w40/${c.cc}.png" style="width:24px;vertical-align:middle"> <b>${c.label}</b><br>
+        デバイス ${c.n} 台 / 平均リスク <b style="color:${rc(c.avg)}">${c.avg}</b> / 最大 ${c.max}<br>要注意 ${c.atrisk} 台</div>`)
+    .ringsData(D.countries.filter(c=>c.avg>=7||c.atrisk>0)).ringLat('lat').ringLng('lng')
+    .ringColor(c => t => `rgba(255,45,85,${1-t})`).ringMaxRadius(6).ringPropagationSpeed(2.5).ringRepeatPeriod(1100)
+    .htmlElementsData(D.countries).htmlLat('lat').htmlLng('lng').htmlAltitude(c => 0.06 + 0.45*c.n/maxN)
+    .htmlElement(c => { const el=document.createElement('div');
+        el.innerHTML=`<img src="https://flagcdn.com/w40/${c.cc}.png" style="width:20px;border-radius:2px;box-shadow:0 0 6px #000"><span style="color:#fff;font:700 11px Segoe UI;text-shadow:0 0 4px #000;margin-left:3px">${c.n}</span>`;
+        el.style.pointerEvents='none'; return el; });
+  g.controls().autoRotate = true; g.controls().autoRotateSpeed = 0.5;
+  const home = D.countries[0]; g.pointOfView({lat: home.lat, lng: home.lng, altitude: 2.2}, 0);
+} catch(e) { document.getElementById('globe').innerHTML = '<div style="padding:20px;color:#ff7a1a">3D 地球儀を読み込めませんでした（CDN へのアクセスを確認してください）</div>'; }
+try {
+  const pie = (id, obj, colors) => echarts.init(document.getElementById(id)).setOption({
+    tooltip:{trigger:'item'}, legend:{bottom:0,textStyle:{color:'#9fb3d9',fontSize:10}},
+    series:[{type:'pie',radius:['45%','72%'],center:['50%','44%'],itemStyle:{borderColor:'#050a18',borderWidth:2},
+      label:{color:'#dbe7ff',formatter:'{b}\\n{c}'},data:Object.entries(obj).map(([k,v])=>({name:k,value:v,itemStyle:colors&&colors[k]?{color:colors[k]}:undefined}))}]});
+  pie('st', D.status, {SECURE:'#2ee6a6',AT_RISK:'#ff7a1a',COMPROMISED:'#ff2d55',NOT_COMPUTED:'#6b7aa1',UNKNOWN:'#6b7aa1',INITIALIZING:'#4fd1ff',UNENROLLED:'#a96bff'});
+  pie('os', D.os);
+  const bins=[...Array(10).keys()]; const data=[];
+  D.countries.forEach((c,ci)=>bins.forEach(b=>data.push([b,ci,0])));
+  (__RISKS__).forEach(([cc,r])=>{const ci=D.countries.findIndex(c=>c.cc===cc);const b=Math.min(9,Math.floor(r));data[ci*10+b][2]++;});
+  echarts.init(document.getElementById('r3')).setOption({
+    tooltip:{}, visualMap:{show:false,min:0,max:Math.max(1,...data.map(d=>d[2])),inRange:{color:['#12306b','#4fd1ff','#ffd23f','#ff2d55']}},
+    xAxis3D:{type:'category',name:'リスク',data:bins.map(b=>b+'-'+(b+1)),axisLabel:{color:'#9fb3d9',fontSize:9},nameTextStyle:{color:'#9fb3d9'}},
+    yAxis3D:{type:'category',name:'拠点',data:D.countries.map(c=>c.cc.toUpperCase()),axisLabel:{color:'#9fb3d9',fontSize:9},nameTextStyle:{color:'#9fb3d9'}},
+    zAxis3D:{type:'value',name:'台数',axisLabel:{color:'#9fb3d9'},nameTextStyle:{color:'#9fb3d9'}},
+    grid3D:{boxWidth:120,boxDepth:70,viewControl:{autoRotate:true,autoRotateSpeed:6,distance:210},light:{main:{intensity:1.2,shadow:true},ambient:{intensity:.35}},axisLine:{lineStyle:{color:'#2b4a8a'}},splitLine:{lineStyle:{color:'#13224a'}}},
+    series:[{type:'bar3D',data:data.filter(d=>d[2]>0),shading:'lambert',bevelSize:.3,label:{show:false}}]});
+} catch(e) {}
+</script>
+"""
+    risks = json.dumps([[r["cc"], r["risk"]] for r in rows])
+    for k, v in {"__DATA__": payload, "__RISKS__": risks, "__TOTAL__": kpi["total"], "__ONLINE__": kpi["online"], "__ATRISK__": kpi["atrisk"],
+                 "__COMP__": kpi["comp"], "__HIGH__": kpi["high"], "__AVG__": kpi["avg"], "__AVGC__": rc(kpi["avg"]), "__CTRY__": kpi["countries"],
+                 "__ATRISK_STYLE__": "animation:pulse 1.6s infinite;border-color:#ff2d55" if kpi["comp"] else "",
+                 "__CROWS__": crs, "__TROWS__": trs}.items():
+        html = html.replace(k, str(v))
+    _render_html(html, 1330)
+    if src == "live":
+        with st.expander("🧾 推定根拠（拠点 / リスクスコア）"):
+            st.json([{k: r[k] for k in ("name", "cc", "cc_how", "risk", "risk_src")} for r in rows[:200]])
+
+# ---------------- ② 脆弱性レポート ----------------
+def render_dash_vuln():
+    _dash_header("🧯 脆弱性レポート ダッシュボード", "深刻度に応じて警告表示（CRITICAL は点滅アラート）。CVE × 影響デバイス × リスクを 3D で可視化")
+    src = _dash_source("dv")
+    with st.expander("⚙️ 取得設定", expanded=False):
+        cve_body = st.text_area("POST .../devices/vulnerabilities/_search の Body（JSON）", value="{}", height=70, key="dv_body")
+        dev_body = st.text_area("POST .../devices/vulnerabilities/summary/_search の Body（JSON）", value="{}", height=70, key="dv_dbody")
+        st.caption("cbx_vuln_assessment.md にレスポンス形式の記載がないため、レスポンスから件数・CVE・深刻度・リスクスコアを自動抽出します（『🧾 生レスポンス』で確認できます）。")
+    raw = {}
+    if src == "live":
+        if st.button("🔄 再取得", key="dv_fetch") or "dv_data" not in st.session_state:  # 開いた瞬間に自動取得
+            errs = []
+            with st.spinner("脆弱性データを取得中..."):
+                c1, summ = dash_api("GET", "/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary")
+                try:
+                    c2, cves = dash_api("POST", "/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/_search", body=json.loads(cve_body or "{}"))
+                except ValueError as e:
+                    c2, cves = 0, {}; errs.append(f"Body の JSON が不正です: {e}")
+                try:
+                    c3, devv = dash_api("POST", "/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/summary/_search", body=json.loads(dev_body or "{}"))
+                except ValueError as e:
+                    c3, devv = 0, {}; errs.append(f"Body の JSON が不正です: {e}")
+            for nm, c, d in (("summary", c1, summ), ("vulnerabilities/_search", c2, cves), ("devices summary/_search", c3, devv)):
+                if c != 200:
+                    errs.append(f"{nm}: Status {c} {str(d)[:200]}")
+            st.session_state["dv_data"] = {"summ": summ if c1 == 200 else {}, "cves": cves if c2 == 200 else {}, "devv": devv if c3 == 200 else {},
+                                           "errs": errs, "at": time.strftime("%H:%M:%S")}
+        cache = st.session_state.get("dv_data", {})
+        for e in cache.get("errs", []):
+            st.error(e)
+        raw = cache
+        vulns = []
+        for r in _find_records(cache.get("cves", {})):
+            cve = _pick(r, ["cve_id", "cve", "id", "name"])
+            rs = _pick(r, ["risk_score", "highest_risk_score"], contains=["risk"], numeric=True)
+            cv = _pick(r, ["cvss_score", "cvss", "base_score", "score"], contains=["cvss"], numeric=True)
+            sev = _pick(r, ["severity", "severity_level", "cvss_severity"]) or cv or rs
+            ad = _pick(r, ["affected_devices", "affected_device_count", "device_count", "devices_count", "asset_count"], contains=["device"], numeric=True)
+            sw = _pick(r, ["software", "product", "software_name", "product_name", "vendor"])
+            if isinstance(sw, (list, dict)):
+                sw = json.dumps(sw, ensure_ascii=False)[:60]
+            ex = _pick(r, ["exploited", "known_exploited", "is_exploited", "kev"], contains=["exploit"])
+            vulns.append({"cve_id": str(cve or "?"), "severity": _norm_sev(sev), "risk_score": _risk10(rs) if rs is not None else (_risk10(cv) or 0),
+                          "cvss": cv, "affected_devices": int(ad or 1), "software": str(sw or ""), "exploited": bool(ex)})
+        sev_counts = _severity_counts(cache.get("summ", {}))
+        assets = _pick(cache.get("summ", {}), ["monitored_assets", "monitored_asset_count", "asset_count", "total_assets", "assets"], contains=["asset"], numeric=True)
+        dev_top = []
+        for r in _find_records(cache.get("devv", {})):
+            dev_top.append({"name": str(_pick(r, ["device_name", "name", "host", "device_uid", "device_id"]) or "?"),
+                            "risk": _risk10(_pick(r, ["highest_risk_score", "risk_score"], contains=["risk"], numeric=True)) or 0,
+                            "count": int(_pick(r, ["vulnerability_count", "vuln_count", "total"], contains=["vuln"], numeric=True) or 0)})
+        if cache.get("at"):
+            st.caption(f"取得時刻: {cache['at']}")
+    else:
+        vulns = _demo_vulns()
+        sev_counts, assets = None, 112
+        dev_top = [{"name": d["device_name"], "risk": d["_risk"], "count": d["_vulns"]} for d in sorted(_demo_devices(), key=lambda x: -x["_risk"])[:15]]
+    if sev_counts is None:
+        sev_counts = {s: 0 for s in SEV_ORDER}
+        for v in vulns:
+            sev_counts[v["severity"]] += 1
+    vulns.sort(key=lambda v: (SEV_ORDER.index(v["severity"]), -v["risk_score"], -v["affected_devices"]))
+    dev_top = sorted(dev_top, key=lambda d: (-d["risk"], -d["count"]))[:15]
+    total = sum(sev_counts[s] for s in SEV_ORDER[:4])
+    # エクスポージャースコア（0-100）: 深刻度で重み付け
+    w = {"CRITICAL": 10, "HIGH": 5, "MEDIUM": 2, "LOW": 0.5}
+    expo = min(100, round(sum(sev_counts[s] * w[s] for s in w) / max(1, (assets or max(total, 1))) * 10, 1)) if total else 0
+    crit, high = sev_counts["CRITICAL"], sev_counts["HIGH"]
+    if crit:
+        banner = f"<div style='animation:blink 1s infinite,pulse 1.6s infinite;background:linear-gradient(90deg,#5a0012,#a3001f,#5a0012);border:2px solid #ff2d55;border-radius:12px;padding:12px 16px;font-size:20px;font-weight:900;color:#fff;text-align:center'>🚨 CRITICAL 脆弱性 {crit} 件を検出 — 直ちにパッチ適用 / 緩和策を実施してください</div>"
+    elif high:
+        banner = f"<div style='background:linear-gradient(90deg,#4a2300,#8a4400);border:2px solid #ff7a1a;border-radius:12px;padding:10px 16px;font-size:18px;font-weight:800;color:#fff;text-align:center;animation:pulse 2.2s infinite'>⚠️ HIGH 脆弱性 {high} 件 — 優先的に対応してください</div>"
+    else:
+        banner = "<div style='background:#0d3a2b;border:1px solid #2ee6a6;border-radius:12px;padding:10px 16px;font-size:16px;font-weight:700;color:#5ff0b8;text-align:center'>✅ CRITICAL / HIGH の脆弱性はありません</div>"
+    sev_col = {"CRITICAL": "#ff2d55", "HIGH": "#ff7a1a", "MEDIUM": "#ffd23f", "LOW": "#4fd1ff", "NONE": "#6b7aa1"}
+    kcards = "".join(
+        f"<div class='kpi' style='border-color:{sev_col[s]};{'animation:pulse 1.4s infinite' if s == 'CRITICAL' and crit else ''}'>"
+        f"<div class='l'>{s}</div><div class='v' style='color:{sev_col[s]}'>{sev_counts[s]}</div></div>" for s in SEV_ORDER[:4])
+    vrows = "".join(
+        f"<tr style='{'animation:blink 1.2s infinite' if v['severity']=='CRITICAL' and v['exploited'] else ''}'>"
+        f"<td><b>{v['cve_id']}</b>{' 🔥' if v['exploited'] else ''}</td>"
+        f"<td><span class='pill' style='background:{sev_col[v['severity']]}22;color:{sev_col[v['severity']]};border:1px solid {sev_col[v['severity']]}'>{v['severity']}</span></td>"
+        f"<td style='min-width:110px'><b style='color:{sev_col[v['severity']]}'>{v['risk_score']}</b><div class='bar'><i style='width:{min(100, v['risk_score']*10)}%;background:{sev_col[v['severity']]}'></i></div></td>"
+        f"<td>{v['affected_devices']}</td><td>{v['software']}</td></tr>" for v in vulns[:60])
+    drows = "".join(
+        f"<tr><td>{d['name']}</td><td style='color:{'#ff2d55' if d['risk']>=9 else '#ff7a1a' if d['risk']>=7 else '#ffd23f'}'><b>{d['risk']}</b></td><td>{d['count']}</td></tr>" for d in dev_top)
+    ticker = " ｜ ".join(f"{'🔴' if v['severity']=='CRITICAL' else '🟠'} {v['cve_id']} ({v['software']}) risk {v['risk_score']} / {v['affected_devices']} 台"
+                        for v in vulns if v["severity"] in ("CRITICAL", "HIGH"))[:3000] or "重大な脆弱性はありません"
+    payload = json.dumps({"sev": sev_counts, "vulns": vulns[:80], "expo": expo, "col": sev_col}, ensure_ascii=False)
+    html = """
+<div class="wrap">
+ <div class="title">VULNERABILITY THREAT BOARD</div><div class="sub">監視資産 __ASSETS__ / 脆弱性 合計 __TOTAL__ 件</div>
+ __BANNER__
+ <div style="overflow:hidden;white-space:nowrap;border:1px solid #3a1020;background:#12050b;border-radius:8px;margin-top:8px;padding:5px 0">
+  <div style="display:inline-block;animation:ticker 40s linear infinite;color:#ff9fb3;font-weight:700;font-size:13px">__TICKER__</div></div>
+ <div class="kpis">__KCARDS__</div>
+ <div class="grid3">
+  <div class="card"><h4>🎯 エクスポージャースコア</h4><div id="gauge" style="height:260px"></div></div>
+  <div class="card"><h4>📊 深刻度の内訳</h4><div id="sev" style="height:260px"></div></div>
+  <div class="card"><h4>💻 脆弱デバイス TOP 15</h4><div class="scroll" style="max-height:260px"><table><tr><th>デバイス</th><th>最高リスク</th><th>件数</th></tr>__DROWS__</table></div></div>
+ </div>
+ <div class="grid2" style="margin-top:10px">
+  <div class="card"><h4>🧊 3D：CVE × 影響デバイス数 × リスクスコア</h4><div id="b3" style="height:430px"></div></div>
+  <div class="card"><h4>🗺️ ソフトウェア別 リスクマップ</h4><div id="tm" style="height:430px"></div></div>
+ </div>
+ <div class="card" style="margin-top:10px"><h4>📋 優先対応 CVE（🔥 = 悪用確認）</h4><div class="scroll"><table>
+  <tr><th>CVE</th><th>深刻度</th><th>リスク</th><th>影響デバイス</th><th>ソフトウェア</th></tr>__VROWS__</table></div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+<script>
+const D = __DATA__;
+try {
+ echarts.init(document.getElementById('gauge')).setOption({series:[{type:'gauge',min:0,max:100,progress:{show:true,width:16},
+   axisLine:{lineStyle:{width:16,color:[[.3,'#2ee6a6'],[.6,'#ffd23f'],[.8,'#ff7a1a'],[1,'#ff2d55']]}},
+   pointer:{itemStyle:{color:'#fff'}},axisLabel:{color:'#8aa0c8'},splitLine:{lineStyle:{color:'#fff'}},
+   detail:{valueAnimation:true,color:'#fff',fontSize:34,fontWeight:800,offsetCenter:[0,'70%']},title:{color:'#8aa0c8',offsetCenter:[0,'95%']},
+   data:[{value:D.expo,name:'Exposure'}]}]});
+ const sevs=['CRITICAL','HIGH','MEDIUM','LOW'];
+ echarts.init(document.getElementById('sev')).setOption({tooltip:{},
+   xAxis:{type:'category',data:sevs,axisLabel:{color:'#9fb3d9'}},yAxis:{type:'value',axisLabel:{color:'#9fb3d9'},splitLine:{lineStyle:{color:'#13224a'}}},
+   series:[{type:'bar',data:sevs.map(s=>({value:D.sev[s],itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:D.col[s]},{offset:1,color:D.col[s]+'33'}]),borderRadius:[6,6,0,0]}})),
+     label:{show:true,position:'top',color:'#fff',fontWeight:700},animationDuration:1500,animationEasing:'elasticOut'}]});
+ const v=D.vulns.slice(0,40);
+ echarts.init(document.getElementById('b3')).setOption({tooltip:{formatter:p=>`${v[p.value[3]].cve_id}<br>${v[p.value[3]].software}<br>risk ${v[p.value[3]].risk_score} / ${v[p.value[3]].affected_devices} 台`},
+   visualMap:{show:false,dimension:2,min:0,max:10,inRange:{color:['#4fd1ff','#ffd23f','#ff7a1a','#ff2d55']}},
+   xAxis3D:{type:'category',name:'CVE',data:v.map(x=>x.cve_id),axisLabel:{show:false},nameTextStyle:{color:'#9fb3d9'}},
+   yAxis3D:{type:'category',name:'深刻度',data:sevs,axisLabel:{color:'#9fb3d9'},nameTextStyle:{color:'#9fb3d9'}},
+   zAxis3D:{type:'value',name:'リスク',max:10,axisLabel:{color:'#9fb3d9'},nameTextStyle:{color:'#9fb3d9'}},
+   grid3D:{boxWidth:200,boxDepth:60,viewControl:{autoRotate:true,autoRotateSpeed:5,distance:230,alpha:22},
+     light:{main:{intensity:1.3,shadow:true},ambient:{intensity:.3}},axisLine:{lineStyle:{color:'#2b4a8a'}},splitLine:{lineStyle:{color:'#13224a'}}},
+   series:[{type:'bar3D',shading:'lambert',bevelSize:.4,barSize:[3,6],
+     data:v.map((x,i)=>({value:[i,Math.max(0,sevs.indexOf(x.severity)),x.risk_score,i]}))}]});
+ const sw={}; D.vulns.forEach(x=>{const k=x.software||'(不明)';sw[k]=sw[k]||{name:k,value:0,risk:0};sw[k].value+=x.affected_devices;sw[k].risk=Math.max(sw[k].risk,x.risk_score);});
+ echarts.init(document.getElementById('tm')).setOption({tooltip:{formatter:p=>`${p.name}<br>影響 ${p.value} 台 / 最高リスク ${p.data.risk}`},
+   series:[{type:'treemap',roam:false,breadcrumb:{show:false},label:{color:'#fff',fontWeight:700},
+     data:Object.values(sw).map(s=>({...s,itemStyle:{color:s.risk>=9?'#b0102f':s.risk>=7?'#c2570f':s.risk>=4?'#a88a12':'#1b6a8a',borderColor:'#050a18',borderWidth:2}}))}]});
+} catch(e) {}
+</script>
+"""
+    for k, v in {"__DATA__": payload, "__ASSETS__": assets if assets is not None else "—", "__TOTAL__": total, "__BANNER__": banner,
+                 "__TICKER__": ticker, "__KCARDS__": kcards, "__DROWS__": drows or "<tr><td colspan=3>データなし</td></tr>",
+                 "__VROWS__": vrows or "<tr><td colspan=5>データなし</td></tr>"}.items():
+        html = html.replace(k, str(v))
+    _render_html(html, 1500)
+    if src == "live":
+        with st.expander("🧾 生レスポンス（抽出結果の確認用）"):
+            st.json({"summary": raw.get("summ"), "vulnerabilities_search": raw.get("cves"), "devices_summary_search": raw.get("devv")})
+
+# ---------------- ③ 攻撃フォロー ----------------
+def render_dash_attack():
+    _dash_header("⚔️ 攻撃フォロー ダッシュボード",
+                 "Threat Intel（Data Related / Insight / Process Chain）のファイル・ネットワーク情報から攻撃の広がりをアニメーション表示")
+    src = _dash_source("da")
+    c1, c2 = st.columns(2)
+    with c1:
+        files_txt = st.text_area("起点ファイル SHA-256（1行に1つ）", height=90, key="da_files",
+                                 value="eec3f761f7eabe9ed569f39e896be24c9bbb8861b15dbde1b3d539505cd9dd8d\nf6afa84b0847414220bb15517b8b5e2c505b64b53efbba73b753379c66ac5017")
+    with c2:
+        nets_txt = st.text_area("起点ネットワーク（ドメイン / URL / グローバル IP、1行に1つ）", height=90, key="da_nets",
+                                value="145.249.105.165\nnicolascoolman.eu\n115.55.57.208")
+    with st.expander("⚙️ 取得設定", expanded=False):
+        expand = st.checkbox("関連 IOC をもう 1 段階たどる（API 呼び出し回数が増えます）", value=False, key="da_expand")
+        max_exp = st.number_input("追加でたどる IOC の上限", min_value=1, max_value=50, value=10, key="da_maxexp")
+        chain_related = st.checkbox("関連 IOC として見つかったファイルの Process Chain も取得する", value=True, key="da_chainrel")
+        max_chain_pages = st.number_input("Process Chain の最大取得ページ数（1 ページ 100 件）", min_value=1, max_value=20, value=5, key="da_chainpg")
+        geo = st.checkbox("ネットワーク IOC の発信地を IP 位置情報で推定する（外部サービス ipwho.is に IP を送信します）", value=False, key="da_geo")
+        home_cc = st.text_input("自社拠点 国コード", value="jp", key="da_home").strip().lower() or "jp"
+    files = [x.strip().lower() for x in files_txt.splitlines() if x.strip()]
+    nets = [x.strip() for x in nets_txt.splitlines() if x.strip()]
+
+    if src == "live":
+        if st.button("🔄 再解析", key="da_fetch") or "da_data" not in st.session_state:  # 開いた瞬間に自動取得
+            data = {"insights": [], "related": [], "chains": [], "origins": {}, "errs": []}
+            seen = set()
+            chain_done = set()
+            def fetch_chain(sha):
+                """Process Chain を全ページ取得（total_pages まで page を進める / 1 ページ最大 100 件）"""
+                if sha in chain_done:
+                    return
+                chain_done.add(sha)
+                pg = 1
+                while pg <= int(max_chain_pages):
+                    c3_, ch = dash_api("GET", f"/common/threat-intel/v1/process-chain/file/{quote(sha, safe='')}",
+                                       params={"page": pg, "page_size": 100})
+                    if c3_ != 200:
+                        if c3_ != 404:
+                            data["errs"].append(f"process-chain {sha[:12]}…: Status {c3_} {str(ch)[:150]}")
+                        break
+                    for x in ch.get("chain") or []:
+                        data["chains"].append({"file": sha, **x})
+                    data.setdefault("chain_totals", {})[sha] = ch.get("total_results")
+                    if pg >= int(ch.get("total_pages") or 1):
+                        break
+                    pg += 1
+            def look(kind, ioc):
+                if (kind, ioc) in seen:
+                    return []
+                seen.add((kind, ioc))
+                if kind == "file":
+                    c, ins = dash_api("GET", f"/common/threat-intel/v1/insight/file/{quote(ioc, safe='')}")
+                    c2_, rel = dash_api("GET", f"/common/threat-intel/v1/related/file/{quote(ioc, safe='')}", params={"page_size": 50})
+                    fetch_chain(ioc)
+                else:
+                    c, ins = dash_api("GET", "/common/threat-intel/v1/insight/network", params={"network": ioc})
+                    c2_, rel = dash_api("GET", f"/common/threat-intel/v1/related/network/{ioc}", params={"page_size": 50})
+                if c == 200:
+                    data["insights"].append({"kind": kind, "id": ioc, **{k: v for k, v in ins.items() if k not in ("file", "network")}})
+                else:
+                    data["errs"].append(f"insight {kind} {ioc[:24]}: Status {c} {str(ins)[:150]}")
+                out = []
+                if c2_ == 200:
+                    for g in rel.get("related") or []:
+                        data["related"].append({"from": ioc, **g})
+                        out += [(g.get("ioc_type") or "file", v) for v in g.get("ioc_values") or []]
+                else:
+                    data["errs"].append(f"related {kind} {ioc[:24]}: Status {c2_} {str(rel)[:150]}")
+                return out
+            with st.spinner("Threat Intel を照会中..."):
+                nxt = []
+                for f in files:
+                    nxt += look("file", f)
+                for n_ in nets:
+                    nxt += look("network", n_)
+                if expand:
+                    for kind, ioc in nxt[: int(max_exp)]:
+                        look("file" if kind == "file" else "network", ioc)
+                if chain_related:  # 関連 IOC として見つかったファイルの Process Chain も取得
+                    for kind, ioc in nxt:
+                        if kind == "file" and re.fullmatch(r"[0-9a-fA-F]{64}", ioc or ""):
+                            fetch_chain(ioc.lower())
+                if geo:
+                    import socket
+                    for kind, ioc in list(seen):
+                        if kind != "network":
+                            continue
+                        host = re.sub(r"^[a-z]+://", "", ioc).split("/")[0].strip("[]")
+                        try:
+                            ip = host if re.match(r"^[0-9.]+$|:", host) else socket.gethostbyname(host)
+                            g = requests.get(f"https://ipwho.is/{ip}", timeout=8).json()
+                            if g.get("country_code"):
+                                data["origins"][ioc] = g["country_code"].lower()
+                        except Exception:
+                            pass
+            data["at"] = time.strftime("%H:%M:%S")
+            st.session_state["da_data"] = data
+        data = st.session_state["da_data"]
+        for e in data.get("errs", []):
+            st.error(e)
+        if data.get("at"):
+            st.caption(f"解析時刻: {data['at']}")
+    else:
+        data = _demo_attack()
+
+    # ---- グラフ構築 ----
+    nodes, links = {}, []
+    def short(x):
+        return x[:10] + "…" if len(x) > 20 else x
+    def add(nid, ntype, label, **kw):
+        if nid not in nodes:
+            nodes[nid] = {"id": nid, "type": ntype, "label": label, "val": 3, **kw}
+        else:
+            nodes[nid].update({k: v for k, v in kw.items() if v is not None})
+        return nid
+    ins_by = {i["id"]: i for i in data["insights"]}
+    for i in data["insights"]:
+        lvl = (i.get("threat_risk_level") or {}).get("level")
+        add(i["id"], i["kind"], short(i["id"]), rep=i.get("reputation"), conf=i.get("reputation_confidence"), lvl=lvl, seed=True)
+        nodes[i["id"]]["val"] = 8
+        for a in i.get("actors") or []:
+            links.append({"source": add("actor:" + a, "actor", a), "target": i["id"], "rel": "攻撃者"})
+            nodes["actor:" + a]["val"] = 10
+        for cc in (i.get("target_orgs") or {}).get("top_countries") or []:
+            links.append({"source": i["id"], "target": add("cc:" + cc.lower(), "country", COUNTRY_GEO.get(cc.lower(), (0, 0, cc.upper()))[2], cc=cc.lower()), "rel": "標的国"})
+    for r in data["related"]:
+        add(r["from"], "file" if len(r["from"]) == 64 and r["from"].isalnum() else "network", short(r["from"]))
+        for v in r.get("ioc_values") or []:
+            t = "file" if (r.get("ioc_type") == "file") else "network"
+            links.append({"source": r["from"], "target": add(v, t, short(v)), "rel": r.get("relation", "")})
+    for c in data["chains"]:
+        p, ch = c.get("parent") or {}, c.get("child") or {}
+        pid = add("proc:" + (p.get("file") or p.get("process_name", "")), "process", p.get("process_name", "?"))
+        cid = add("proc:" + (ch.get("file") or ch.get("process_name", "")), "process", ch.get("process_name", "?"))
+        links.append({"source": pid, "target": cid, "rel": "起動"})
+        if ch.get("file") and ch["file"] in nodes:
+            links.append({"source": cid, "target": ch["file"], "rel": "実体"})
+    # 地球儀用
+    arcs, rings = [], {}
+    for i in data["insights"]:
+        tcs = [c.lower() for c in (i.get("target_orgs") or {}).get("top_countries") or [] if c.lower() in COUNTRY_GEO]
+        lvl = (i.get("threat_risk_level") or {}).get("level") or (9 if i.get("reputation") == "BAD" else 4)
+        for cc in tcs:
+            rings[cc] = max(rings.get(cc, 0), lvl)
+        org = data.get("origins", {}).get(i["id"])
+        if org in COUNTRY_GEO:
+            srcs = [(org, "発信地 → 標的国")]
+        else:
+            srcs = []
+        for (o, kind) in srcs:
+            for cc in tcs + ([home_cc] if home_cc in COUNTRY_GEO else []):
+                if cc != o:
+                    arcs.append({"s": COUNTRY_GEO[o][:2], "e": COUNTRY_GEO[cc][:2], "lvl": lvl, "lab": f"{short(i['id'])}: {COUNTRY_GEO[o][2]} → {COUNTRY_GEO[cc][2]}"})
+        if not srcs and len(tcs) > 1:  # 発信地不明: 同一脅威の標的国どうしを結ぶ（キャンペーンの広がり）
+            for a, b in zip(tcs, tcs[1:]):
+                arcs.append({"s": COUNTRY_GEO[a][:2], "e": COUNTRY_GEO[b][:2], "lvl": lvl, "lab": f"{short(i['id'])}: 標的範囲 {COUNTRY_GEO[a][2]} ↔ {COUNTRY_GEO[b][2]}"})
+    ring_list = [{"lat": COUNTRY_GEO[c][0], "lng": COUNTRY_GEO[c][1], "lvl": l, "cc": c, "name": COUNTRY_GEO[c][2], "home": c == home_cc} for c, l in rings.items()]
+    actors = sorted({a for i in data["insights"] for a in i.get("actors") or []})
+    bad = sum(i.get("reputation") == "BAD" for i in data["insights"])
+    maxlvl = max([(i.get("threat_risk_level") or {}).get("level") or 0 for i in data["insights"]] + [0])
+    home_hit = home_cc in rings
+    tl = [{"id": short(i["id"]), "kind": i["kind"], "s": i.get("first_seen"), "e": i.get("last_seen") or i.get("first_seen"), "rep": i.get("reputation")}
+          for i in data["insights"] if i.get("first_seen")]
+    # ---- Process Chain 集計 ----
+    rep_by = {i["id"]: i.get("reputation") for i in data["insights"]}
+    pc_pairs, pc_nodes, pc_parent_cnt, pc_child_cnt = {}, {}, {}, {}
+    for c in data["chains"]:
+        p, ch = c.get("parent") or {}, c.get("child") or {}
+        pn, cn = p.get("process_name") or "?", ch.get("process_name") or "?"
+        pk, ck = f"{pn}|{(p.get('file') or '')[:8]}", f"{cn}|{(ch.get('file') or '')[:8]}"
+        for key, nm, fh in ((pk, pn, p.get("file")), (ck, cn, ch.get("file"))):
+            pc_nodes.setdefault(key, {"name": key, "proc": nm, "sha": fh or "", "bad": rep_by.get(fh or "") == "BAD"})
+        pc_pairs[(pk, ck)] = pc_pairs.get((pk, ck), 0) + 1
+        pc_parent_cnt[pn] = pc_parent_cnt.get(pn, 0) + 1
+        pc_child_cnt[cn] = pc_child_cnt.get(cn, 0) + 1
+    # 循環（A→B→A）は Sankey で描けないため除外
+    pc_links, _adj = [], {}
+    for (a, b), v in pc_pairs.items():
+        if a == b:
+            continue
+        # b から a へ到達できるなら追加すると循環になるので除外（Sankey は DAG のみ）
+        stack, seen_ = [b], set()
+        cyc = False
+        while stack:
+            x = stack.pop()
+            if x == a:
+                cyc = True; break
+            if x in seen_:
+                continue
+            seen_.add(x); stack += _adj.get(x, [])
+        if not cyc:
+            _adj.setdefault(a, []).append(b)
+            pc_links.append({"source": a, "target": b, "value": v})
+    # 系統ツリー（ルート = 親を持たないプロセス）
+    children = {}
+    for (a, b) in pc_pairs:
+        if a != b:
+            children.setdefault(a, []).append(b)
+    has_parent = {b for (a, b) in pc_pairs if a != b}
+    def build_tree(k, depth=0, path=()):
+        n = pc_nodes[k]
+        node = {"name": n["proc"], "sha": n["sha"], "bad": n["bad"],
+                "itemStyle": {"color": "#ff2d55" if n["bad"] else "#a96bff", "borderColor": "#fff"}}
+        if depth < 8 and k not in path:
+            kids = [build_tree(x, depth + 1, path + (k,)) for x in children.get(k, [])]
+            if kids:
+                node["children"] = kids
+        return node
+    roots = [k for k in pc_nodes if k not in has_parent] or list(pc_nodes)[:1]
+    pc_tree = {"name": "Process Lineage", "itemStyle": {"color": "#4fd1ff"}, "children": [build_tree(r) for r in roots[:30]]}
+    pc_rows = "".join(
+        f"<tr><td>{short(c.get('file',''))}</td><td>⚙️ <b>{(c.get('parent') or {}).get('process_name','?')}</b><div style='font-size:10px;color:#7f95c2'>{(c.get('parent') or {}).get('file','')}</div></td>"
+        f"<td style='color:#ff2d55;font-size:16px'>━▶</td>"
+        f"<td><b style='color:{'#ff2d55' if rep_by.get((c.get('child') or {}).get('file','')) == 'BAD' else '#ff9fb3'}'>{(c.get('child') or {}).get('process_name','?')}</b>"
+        f"<div style='font-size:10px;color:#7f95c2'>{(c.get('child') or {}).get('file','')}</div></td>"
+        f"<td style='font-size:10px;color:#7f95c2'>{short((c.get('parent') or {}).get('parent_sha256') or '—')}</td></tr>" for c in data["chains"][:200])
+    top_par = sorted(pc_parent_cnt.items(), key=lambda x: -x[1])[:10]
+    top_chi = sorted(pc_child_cnt.items(), key=lambda x: -x[1])[:10]
+    pc_sec = "" if not data["chains"] else f"""
+ <div class="title" style="margin-top:14px;font-size:18px">⛓️ PROCESS CHAIN ANALYSIS</div>
+ <div class="sub">GET /common/threat-intel/v1/process-chain/file/{{file_sha256}} — 親子プロセスの系統（赤 = BAD 判定のファイル）</div>
+ <div class="kpis">
+  <div class="kpi"><div class="l">親子ペア</div><div class="v" style="color:#a96bff">{len(data['chains'])}</div></div>
+  <div class="kpi"><div class="l">ユニーク プロセス</div><div class="v" style="color:#4fd1ff">{len(pc_nodes)}</div></div>
+  <div class="kpi"><div class="l">起点（親）プロセス</div><div class="v" style="color:#ffd23f">{len(roots)}</div></div>
+  <div class="kpi"><div class="l">最多の親プロセス</div><div class="v" style="color:#ff7a1a;font-size:18px">{top_par[0][0] if top_par else '—'}<span style="font-size:13px"> ×{top_par[0][1] if top_par else 0}</span></div></div>
+ </div>
+ <div class="grid2">
+  <div class="card"><h4>🌊 プロセス実行フロー（Sankey）</h4><div id="pcs" style="height:420px"></div></div>
+  <div class="card"><h4>🌳 プロセス系統ツリー</h4><div id="pct" style="height:420px"></div></div>
+ </div>
+ <div class="grid3" style="margin-top:10px">
+  <div class="card"><h4>👆 親プロセス TOP</h4><div id="pcp" style="height:240px"></div></div>
+  <div class="card"><h4>👇 子プロセス TOP</h4><div id="pcc" style="height:240px"></div></div>
+  <div class="card"><h4>⛓️ 実行チェーン（アニメーション）</h4><div class="scroll" style="max-height:240px">__CHAINS__</div></div>
+ </div>
+ <div class="card" style="margin-top:10px"><h4>📋 Process Chain 詳細</h4><div class="scroll"><table>
+  <tr><th>照会ファイル</th><th>親プロセス（SHA-256）</th><th></th><th>子プロセス（SHA-256）</th><th>親の親</th></tr>{pc_rows}</table></div></div>"""
+    chain_html = "".join(
+        f"<div style='margin:6px 0;animation:pulse 2s infinite;border-radius:8px;padding:6px 8px;background:#120b24;border:1px solid #3d2470'>"
+        f"⚙️ <b>{(c.get('parent') or {}).get('process_name','?')}</b> <span style='color:#ff2d55'>━━▶</span> "
+        f"<b style='color:#ff6b8a'>{(c.get('child') or {}).get('process_name','?')}</b>"
+        f"<div style='font-size:10px;color:#7f95c2'>{short(c.get('file',''))}</div></div>" for c in data["chains"][:20]) or "<div style='color:#7f95c2'>プロセスチェーンなし</div>"
+    payload = json.dumps({"nodes": list(nodes.values()), "links": links, "arcs": arcs, "rings": ring_list, "tl": tl,
+                          "ins": data["insights"],
+                          "pc": {"nodes": list(pc_nodes.values()), "links": pc_links, "tree": pc_tree, "toppar": top_par, "topchi": top_chi},
+                          "home": list(COUNTRY_GEO.get(home_cc, (36.2, 138.3, ""))[:2])}, ensure_ascii=False)
+    flags = "".join(f"<span style='margin-right:10px'>{_flag_img(r['cc'])}{r['name']} <b style='color:#ff6b8a'>Lv{r['lvl']}</b></span>" for r in sorted(ring_list, key=lambda x: -x["lvl"]))
+    html = """
+<div class="wrap">
+ <div class="title">ATTACK FLOW TRACKER</div><div class="sub">粒子の流れ = IOC 間の関連（攻撃者 → IOC → 関連ファイル / 通信先 → プロセス）。赤いリング = 標的国</div>
+ __HOMEALERT__
+ <div class="kpis">
+  <div class="kpi"><div class="l">照会 IOC</div><div class="v" style="color:#4fd1ff">__NI__</div></div>
+  <div class="kpi" style="__BADSTYLE__"><div class="l">悪性（BAD）</div><div class="v" style="color:#ff2d55">__BAD__</div></div>
+  <div class="kpi"><div class="l">関連 IOC</div><div class="v" style="color:#a96bff">__NREL__</div></div>
+  <div class="kpi"><div class="l">攻撃者グループ</div><div class="v" style="color:#ff7a1a;font-size:18px">__ACTORS__</div></div>
+  <div class="kpi"><div class="l">最大 脅威レベル</div><div class="v" style="color:#ffd23f">__MAXLVL__<span style="font-size:14px">/10</span></div></div>
+ </div>
+ <div class="grid2">
+  <div class="card"><h4>🕸️ 3D 攻撃関係グラフ</h4><div id="fg" style="height:480px"></div>
+   <div style="font-size:11px;color:#8aa0c8">● <span style="color:#ff2d55">攻撃者</span> ● <span style="color:#ff7a1a">ファイル</span> ● <span style="color:#4fd1ff">ネットワーク</span> ● <span style="color:#a96bff">プロセス</span> ● <span style="color:#2ee6a6">標的国</span></div></div>
+  <div class="card"><h4>🌍 攻撃の広がり</h4><div id="globe" style="height:480px"></div></div>
+ </div>
+ <div class="card" style="margin-top:8px;font-size:12px">🎯 標的国: __FLAGS__</div>
+ <div class="grid2" style="margin-top:10px">
+  <div class="card"><h4>⏱️ 観測タイムライン（first_seen → last_seen）</h4><div id="tl" style="height:300px"></div></div>
+  <div class="card"><h4>🧬 攻撃者 / 標的業界</h4><div id="ind" style="height:300px"></div></div>
+ </div>
+ __PCSEC__
+</div>
+<script src="https://unpkg.com/3d-force-graph"></script>
+<script src="https://unpkg.com/globe.gl"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+const D = __DATA__;
+const col = {actor:'#ff2d55',file:'#ff7a1a',network:'#4fd1ff',process:'#a96bff',country:'#2ee6a6'};
+try {
+ const el = document.getElementById('fg');
+ const G = ForceGraph3D()(el).width(el.clientWidth).height(480).backgroundColor('#050a18')
+  .graphData({nodes:D.nodes, links:D.links})
+  .nodeColor(n => n.rep==='BAD' && n.type!=='actor' ? '#ff4060' : col[n.type]).nodeVal('val').nodeOpacity(.95)
+  .nodeLabel(n => `<div style="background:#0a1226ee;padding:5px 7px;border:1px solid #2b4a8a;border-radius:6px">
+     ${n.type==='country'?`<img src="https://flagcdn.com/w40/${n.cc}.png" style="width:20px;vertical-align:middle"> `:''}<b>${n.label}</b><br>
+     <span style="color:#8aa0c8">${n.type}</span>${n.rep?` / ${n.rep} (${n.conf??'-'})`:''}${n.lvl!=null?` / 脅威Lv ${n.lvl}`:''}<br><span style="font-size:10px">${n.id}</span></div>`)
+  .linkColor(l => l.rel==='攻撃者'?'#ff2d55':l.rel==='標的国'?'#2ee6a6':'#4f6fb0').linkOpacity(.45).linkWidth(.6)
+  .linkLabel(l => l.rel)
+  .linkDirectionalParticles(l => l.rel==='攻撃者'||l.rel==='起動'?5:3)
+  .linkDirectionalParticleWidth(2.2).linkDirectionalParticleSpeed(.008)
+  .linkDirectionalParticleColor(l => l.rel==='標的国'?'#2ee6a6':'#ff3b5c');
+ let ang=0; setInterval(()=>{ang+=Math.PI/900;G.cameraPosition({x:260*Math.sin(ang),z:260*Math.cos(ang)});},40);
+} catch(e) { document.getElementById('fg').innerHTML='<div style="padding:20px;color:#ff7a1a">3D グラフを読み込めませんでした（CDN へのアクセスを確認してください）</div>'; }
+try {
+ const ge = document.getElementById('globe');
+ const lc = l => l>=8?['#ff2d55','#ff9a3c']:l>=5?['#ff7a1a','#ffd23f']:['#4fd1ff','#a96bff'];
+ const g = Globe()(ge).width(ge.clientWidth).height(480)
+  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+  .atmosphereColor('#ff2d55').atmosphereAltitude(.18)
+  .arcsData(D.arcs).arcStartLat(a=>a.s[0]).arcStartLng(a=>a.s[1]).arcEndLat(a=>a.e[0]).arcEndLng(a=>a.e[1])
+  .arcColor(a=>lc(a.lvl)).arcStroke(.7).arcDashLength(.35).arcDashGap(.15).arcDashAnimateTime(a=>3200-200*a.lvl).arcLabel('lab').arcAltitudeAutoScale(.45)
+  .ringsData(D.rings).ringLat('lat').ringLng('lng').ringColor(r=>t=>r.home?`rgba(255,215,0,${1-t})`:`rgba(255,45,85,${1-t})`)
+  .ringMaxRadius(r=>3+r.lvl*.6).ringPropagationSpeed(3).ringRepeatPeriod(r=>1400-90*r.lvl)
+  .htmlElementsData(D.rings).htmlLat('lat').htmlLng('lng').htmlElement(r=>{const d=document.createElement('div');
+    d.innerHTML=`<img src="https://flagcdn.com/w40/${r.cc}.png" style="width:20px;border-radius:2px;box-shadow:0 0 8px ${r.home?'#ffd700':'#ff2d55'}">`;d.style.pointerEvents='none';return d;});
+ g.controls().autoRotate=true; g.controls().autoRotateSpeed=.8; g.pointOfView({lat:D.home[0],lng:D.home[1],altitude:2.3},0);
+} catch(e) { document.getElementById('globe').innerHTML='<div style="padding:20px;color:#ff7a1a">地球儀を読み込めませんでした</div>'; }
+try {
+ const t = D.tl; const cat = t.map(x=>x.id);
+ echarts.init(document.getElementById('tl')).setOption({tooltip:{formatter:p=>`${t[p.dataIndex].id}<br>${t[p.dataIndex].s} → ${t[p.dataIndex].e}`},
+  grid:{left:110,right:20,top:10,bottom:30},xAxis:{type:'time',axisLabel:{color:'#9fb3d9'},splitLine:{lineStyle:{color:'#13224a'}}},
+  yAxis:{type:'category',data:cat,axisLabel:{color:'#dbe7ff',fontSize:10}},
+  series:[{type:'custom',renderItem:(params,api)=>{const s=api.coord([api.value(1),api.value(0)]),e=api.coord([api.value(2),api.value(0)]);const h=api.size([0,1])[1]*.5;
+    return {type:'rect',shape:{x:s[0],y:s[1]-h/2,width:Math.max(4,e[0]-s[0]),height:h},style:{fill:t[params.dataIndex].rep==='BAD'?'#ff2d55':'#4fd1ff',shadowBlur:12,shadowColor:'#ff2d55'}};},
+   encode:{x:[1,2],y:0},data:t.map((x,i)=>[i,x.s,x.e]),animationDuration:2000}]});
+} catch(e) {}
+try {
+ const ind={}; D.ins.forEach(i=>((i.target_orgs||{}).top_industries||[]).forEach(x=>ind[x]=(ind[x]||0)+1));
+ const act={}; D.ins.forEach(i=>(i.actors||[]).forEach(x=>act[x]=(act[x]||0)+1));
+ echarts.init(document.getElementById('ind')).setOption({tooltip:{},series:[
+  {type:'pie',radius:['0%','38%'],center:['50%','50%'],label:{color:'#fff',fontSize:10},data:Object.entries(act).map(([k,v])=>({name:k,value:v,itemStyle:{color:'#ff2d55'}}))},
+  {type:'pie',radius:['48%','72%'],center:['50%','50%'],roseType:'radius',label:{color:'#9fb3d9',fontSize:10},data:Object.entries(ind).map(([k,v])=>({name:k,value:v}))}]});
+} catch(e) {}
+try {
+ if (D.pc.links.length) {
+  echarts.init(document.getElementById('pcs')).setOption({tooltip:{trigger:'item',formatter:p=>p.dataType==='edge'?`${p.data.source.split('|')[0]} ▶ ${p.data.target.split('|')[0]} (${p.data.value})`:p.name.split('|')[0]},
+   series:[{type:'sankey',emphasis:{focus:'adjacency'},nodeAlign:'left',layoutIterations:32,
+    data:D.pc.nodes.map(n=>({name:n.name,itemStyle:{color:n.bad?'#ff2d55':'#a96bff',borderColor:'#fff'}})),links:D.pc.links,
+    label:{color:'#dbe7ff',fontSize:11,formatter:p=>p.name.split('|')[0]},lineStyle:{color:'gradient',curveness:.5,opacity:.45},animationDuration:2500}]});
+ }
+ const tc=echarts.init(document.getElementById('pct'));
+ tc.setOption({tooltip:{formatter:p=>`<b>${p.name}</b><br><span style="font-size:10px">${p.data.sha||''}</span>`},
+  series:[{type:'tree',data:[D.pc.tree],orient:'LR',left:'8%',right:'22%',top:'5%',bottom:'5%',symbolSize:11,initialTreeDepth:-1,
+   label:{color:'#dbe7ff',fontSize:11,position:'left'},leaves:{label:{position:'right',color:'#ff9fb3'}},
+   lineStyle:{color:'#4f6fb0',width:1.5,curveness:.5},expandAndCollapse:true,animationDuration:1200}]});
+ const bar=(id,arr,c)=>echarts.init(document.getElementById(id)).setOption({grid:{left:110,right:30,top:5,bottom:20},
+   xAxis:{type:'value',axisLabel:{color:'#9fb3d9'},splitLine:{lineStyle:{color:'#13224a'}}},
+   yAxis:{type:'category',inverse:true,data:arr.map(x=>x[0]),axisLabel:{color:'#dbe7ff',fontSize:10}},
+   series:[{type:'bar',data:arr.map(x=>x[1]),itemStyle:{color:c,borderRadius:[0,6,6,0]},label:{show:true,position:'right',color:'#fff'},animationDuration:1800}]});
+ bar('pcp',D.pc.toppar,'#ffd23f'); bar('pcc',D.pc.topchi,'#ff2d55');
+} catch(e) {}
+</script>
+"""
+    home_alert = (f"<div style='animation:pulse 1.5s infinite;background:#3a2a00;border:2px solid #ffd700;border-radius:10px;padding:8px 14px;font-weight:800;color:#ffe680;margin-bottom:6px'>"
+                  f"⚠️ 自社拠点（{_flag_img(home_cc)}{COUNTRY_GEO.get(home_cc, (0, 0, home_cc.upper()))[2]}）が標的国に含まれています</div>") if home_hit else ""
+    for k, v in {"__DATA__": payload, "__NI__": len(data["insights"]), "__BAD__": bad, "__NREL__": sum(len(r.get("ioc_values") or []) for r in data["related"]),
+                 "__ACTORS__": ", ".join(actors) or "—", "__MAXLVL__": maxlvl, "__FLAGS__": flags or "—", "__PCSEC__": pc_sec, "__CHAINS__": chain_html,
+                 "__HOMEALERT__": home_alert, "__BADSTYLE__": "animation:pulse 1.6s infinite;border-color:#ff2d55" if bad else ""}.items():
+        html = html.replace(k, str(v))
+    _render_html(html, 2350 if data["chains"] else 1250)
+    if src == "live":
+        with st.expander("🧾 取得データ（生）"):
+            st.json({k: data.get(k) for k in ("insights", "related", "chains", "origins")})
+
+DASHBOARD_PAGES = {DASH_CLIENT: render_dash_client, DASH_VULN: render_dash_vuln, DASH_ATTACK: render_dash_attack}
+
 # --- SIDEBAR ---
 st.sidebar.title("⚡ CBX Control Panel")
 st.sidebar.markdown("---")
@@ -2436,7 +3414,7 @@ api_token = st.session_state.get("global_token") or DEFAULT_TOKEN
 # --- トークン残り時間（大きい太字・1秒ごとに動的更新） ---
 _exp_now = current_token_exp()
 with st.sidebar:
-    st.components.v1.html(f"""
+    components.html(f"""
 <div id="tk" style="font-family:'Segoe UI',sans-serif;text-align:center;padding:8px 4px;border-radius:10px;background:#f4f6fb;">
   <div style="font-size:13px;color:#555;">🔑 Token 残り時間</div>
   <div id="tk_t" style="font-size:38px;font-weight:800;line-height:1.2;">--:--</div>
@@ -2504,6 +3482,9 @@ module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
         "🔑 Authentication (OAuth 2.0)",
+        DASH_CLIENT,
+        DASH_VULN,
+        DASH_ATTACK,
         "📁 File Inventory",
         "🔍 Events",
         "🎯 Custom Detections",
@@ -2520,6 +3501,16 @@ module_choice = st.selectbox(
 )
 
 st.markdown("---")
+
+# 📊 ダッシュボードページ（テンプレート / 実行ボックスは表示しない）
+_prev_module = st.session_state.get("_last_module")
+st.session_state["_last_module"] = module_choice
+if module_choice in DASHBOARD_PAGES:
+    if _prev_module != module_choice:  # ダッシュボードを開いた瞬間 → API から最新データを自動取得
+        for _k in ("dc_data", "dv_data", "da_data"):
+            st.session_state.pop(_k, None)
+    DASHBOARD_PAGES[module_choice]()
+    st.stop()
 
 # Comprehensive Endpoint & Form Generator
 with st.container():
