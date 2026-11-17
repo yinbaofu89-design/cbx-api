@@ -76,7 +76,6 @@ st.markdown('<div class="sub-header">すべてのAPI・全エンドポイント�
 module_choice = st.selectbox(
     "📁 APIモジュール（カテゴリ）を選択",
     [
-        "🔑 Authentication (OAuth 2.0)",
         "📁 File Inventory",
         "🎯 Custom Detections",
         "💻 Device Query",
