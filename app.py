@@ -1811,6 +1811,19 @@ API_SPECS = {'💽 Devices': {'doc': 'cbx_devices.md',
                                   'body': None,
                                   'body_schema': []},
                                  {'method': 'GET',
+                                  'path': '/common/threat-intel/v1/insight/network/{network}',
+                                  'summary': '【パス形式】指定した URL、ドメイン、または IP のネットワークエンリッチメントを返します（実環境で確認された形式）。',
+                                  'operation_id': 'getNetworkInsight (path)',
+                                  'sku': '',
+                                  'desc': 'md ではクエリパラメータ形式（?network=）ですが、実環境では "Path must be /api/cbx-threat-intel/{api}/{ioc_type}/{ioc_value}" '
+                                          'となり 400 が返るため、IOC をパスに含める形式を追加しています。値は URL エンコードせずに送信します（\'/\' を含む URL も可）。',
+                                  'path_params': [{'name': 'network', 'type': 'string', 'required': True,
+                                                   'desc': '検索対象の URL、ドメイン名、または IP アドレス（URL エンコード不要）',
+                                                   'sample': '145.249.105.165'}],
+                                  'query_params': [],
+                                  'body': None,
+                                  'body_schema': []},
+                                 {'method': 'GET',
                                   'path': '/common/threat-intel/v1/insight/network/history',
                                   'summary': '指定した URL、ドメイン、または IP のカテゴリ分類およびリスクレベルの履歴を返す API です。',
                                   'operation_id': 'listNetworkInsightHistory',
@@ -1940,7 +1953,7 @@ def render_generic_api(module_key):
     # Path parameters
     for p in ep["path_params"]:
         val = st.text_input(f"{p['name']} (path)", value=p["sample"], key=f"{kp}_pp_{p['name']}", help=p["desc"])
-        g_path = g_path.replace("{" + p["name"] + "}", quote(val.strip(), safe=""))
+        g_path = g_path.replace("{" + p["name"] + "}", net_path(val) if p["name"] == "network" else quote(val.strip(), safe=""))
 
     # Query parameters
     qps = ep["query_params"]
@@ -2439,6 +2452,10 @@ DASH_CSS = """
 
 def _flag_img(cc):
     return f'<img class="flag" src="https://flagcdn.com/w40/{cc}.png" onerror="this.style.display=\'none\'">' if cc else ""
+
+def net_path(v):
+    """ネットワーク IOC をパスに埋め込む（md: URL エンコードしない。'/' ':' はそのまま、空白等のみエンコード）"""
+    return quote(str(v).strip(), safe=":/[]@!$&'()*+,;=-._~")
 
 def dash_api(method, path, params=None, body=None):
     """ダッシュボード用 API 呼び出し（Bearer = グローバル適用トークン / 自動更新 ON なら 401 時に 1 回再取得）"""
@@ -3051,8 +3068,13 @@ def render_dash_attack():
                     c2_, rel = dash_api("GET", f"/common/threat-intel/v1/related/file/{quote(ioc, safe='')}", params={"page_size": 50})
                     fetch_chain(ioc)
                 else:
-                    c, ins = dash_api("GET", "/common/threat-intel/v1/insight/network", params={"network": ioc})
-                    c2_, rel = dash_api("GET", f"/common/threat-intel/v1/related/network/{ioc}", params={"page_size": 50})
+                    # 実環境はパス形式（/insight/network/{ioc}）のみ受け付ける（md はクエリ形式）。失敗時はクエリ形式で再試行
+                    c, ins = dash_api("GET", f"/common/threat-intel/v1/insight/network/{net_path(ioc)}")
+                    if c in (400, 404, 405):
+                        c_q, ins_q = dash_api("GET", "/common/threat-intel/v1/insight/network", params={"network": ioc})
+                        if c_q == 200:
+                            c, ins = c_q, ins_q
+                    c2_, rel = dash_api("GET", f"/common/threat-intel/v1/related/network/{net_path(ioc)}", params={"page_size": 50})
                 if c == 200:
                     data["insights"].append({"kind": kind, "id": ioc, **{k: v for k, v in ins.items() if k not in ("file", "network")}})
                 else:
