@@ -76,27 +76,29 @@ if "exec_payload" not in st.session_state:
 
 # Header
 st.markdown('<div class="main-header">⚡ CBX API Minimal Commander</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">すべてのAPIカテゴリ（脆弱性評価を含む）に対応し、テンプレートから実行ボックスへ即時転送できるシンプルツール</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">すべてのAPIカテゴリ・メソッドを網羅し、テンプレートから実行ボックスへ即時転送できるプロフェッショナルツール</div>', unsafe_allow_html=True)
 
-# --- CATEGORY TABS FOR INPUT GENERATION ---
+# --- CATEGORY SELECTION COVERING ALL APIS ---
 cat = st.selectbox(
-    "📁 APIカテゴリを選択してテンプレート項目を表示",
+    "📁 APIカテゴリを選択してすべての機能・メソッドにアクセス",
     [
-        "🎯 Custom Detections (Search)",
-        "💻 Device Query (Trigger)",
-        "⚙️ Jobs (Event Export)",
-        "🔌 Live Response (Create Session)",
-        "🔔 Notifications (Rules)",
-        "📜 Policy Management (List)",
+        "🔑 Authentication (OAuth Tokens)",
+        "🎯 Custom Detections (Search / CRUD / Bulk)",
+        "💻 Device Query (Commands / Schedules)",
+        "🚨 Alerts & Threats (Search / Notes / Workflow)",
+        "⚙️ Jobs & Export (Event Export / Download)",
+        "🔌 Live Response (Sessions / Files / Commands)",
+        "🔔 Notifications (Rules / History)",
+        "📜 Policy Management (Policies / Allow-Deny / Import-Export)",
         "🔓 Script Deobfuscation (Reveal)",
-        "🌐 Threat Intel (TAXII Discovery)",
-        "🛡️ Vulnerability Assessment (Org Summary)"
+        "🌐 Threat Intel (TAXII 1.1 Discovery & Poll)",
+        "🛡️ Vulnerability Assessment (Org & Device Summaries / CVEs)"
     ]
 )
 
 st.markdown("---")
 
-# Template Generator based on Selection
+# Template Generator covering all endpoints & methods
 with st.container():
     st.subheader(f"📝 テンプレート設定: {cat}")
     
@@ -107,57 +109,256 @@ with st.container():
     col_in1, col_in2 = st.columns([1, 1])
 
     with col_in1:
-        if "Custom Detections" in cat:
-            t_endpoint = "/detect-respond/detection/v1/custom-detections/_search"
-            page = st.number_input("Page", value=1, min_value=1)
-            size = st.number_input("Size", value=10, min_value=1)
-            t_data = {"page": page, "size": size}
-        elif "Device Query" in cat:
-            t_endpoint = "/detect-respond/device-query/v2/commands"
-            cmd_type = st.selectbox("Command Type", ["forensic", "artifact"])
-            scope = st.selectbox("Scope", ["all", "device_ids"])
-            query_str = st.text_area("Query", value="SELECT * FROM processes WHERE name = 'powershell.exe';")
-            t_data = {"command_type": cmd_type, "scope": scope, "query": query_str}
-        elif "Jobs" in cat:
-            t_endpoint = "/detect-respond/jobs/v4/event_export"
-            q = st.text_input("Threat Hunter Query", value="process_name: powershell.exe")
-            time_range = st.selectbox("Time Range", ["1h", "24h", "7d"])
-            t_data = {"query": q, "time_range": time_range}
-        elif "Live Response" in cat:
-            t_endpoint = "/detect-respond/live-response/v7/sessions"
-            dev_id = st.text_input("Device ID", value="device-001")
-            t_data = {"device_id": dev_id}
-        elif "Notifications" in cat:
-            t_method = "GET"
-            t_endpoint = "/detect-respond/notifications/v2/rules"
-            t_data = {}
-        elif "Policy Management" in cat:
-            t_method = "GET"
-            t_endpoint = "/common/policy-management/v2/policies"
-            t_data = {}
-        elif "Script Deobfuscation" in cat:
-            t_endpoint = "/detect-respond/script-deobfuscation/v3/reveal"
-            script = st.text_area("Script / Base64", value="powershell.exe -e aQBm...")
-            t_data = {"script": script}
-        elif "Threat Intel" in cat:
-            t_endpoint = "/common/threat-intel/v1/taxii11/discovery"
-            t_data = {}
-        elif "Vulnerability Assessment" in cat:
-            t_method = "GET"
-            t_endpoint = "/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary"
-            t_data = {}
+        if "Authentication" in cat:
+            sub_op = st.selectbox("Operation", ["Get Bearer Token"])
+            t_method = "POST"
+            t_endpoint = "/common/v1/oauth2/tokens"
+            t_data = {"grant_type": "client_credentials", "scope": "domain"}
+            
+        elif "Custom Detections" in cat:
+            sub_op = st.selectbox("Operation", [
+                "Search Custom Detections (_search)",
+                "Create Custom Detection",
+                "Get Custom Detection",
+                "Update Custom Detection",
+                "Delete Custom Detection",
+                "Search Query Sub-resources (queries/_search)",
+                "Create Query Sub-resource"
+            ])
+            if "Search Custom Detections" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/detection/v1/custom-detections/_search"
+                t_data = {"page": 1, "size": 10}
+            elif "Create Custom Detection" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/detection/v1/custom-detections"
+                t_data = {"name": "Sample Detection", "description": "Description here", "enabled": True}
+            elif "Get Custom Detection" in sub_op:
+                t_method = "GET"
+                det_id = st.text_input("Detection ID", value="det-123")
+                t_endpoint = f"/detect-respond/detection/v1/custom-detections/{det_id}"
+                t_data = {}
+            elif "Update Custom Detection" in sub_op:
+                t_method = "PUT"
+                det_id = st.text_input("Detection ID", value="det-123")
+                t_endpoint = f"/detect-respond/detection/v1/custom-detections/{det_id}"
+                t_data = {"name": "Updated Name", "enabled": True}
+            elif "Delete Custom Detection" in sub_op:
+                t_method = "DELETE"
+                det_id = st.text_input("Detection ID", value="det-123")
+                t_endpoint = f"/detect-respond/detection/v1/custom-detections/{det_id}"
+                t_data = {}
+            elif "Search Query Sub-resources" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/detection/v1/custom-detections/queries/_search"
+                t_data = {"criteria": {"query": "cmd.exe"}}
+            elif "Create Query Sub-resource" in sub_op:
+                t_method = "POST"
+                det_id = st.text_input("Detection ID", value="det-123")
+                t_endpoint = f"/detect-respond/detection/v1/custom-detections/{det_id}/queries"
+                t_data = {"query": "process_name: calc.exe", "severity": 5}
 
-        # Automatically inject customer_id and domain_id if available & POST/PUT
+        elif "Device Query" in cat:
+            sub_op = st.selectbox("Operation", [
+                "Trigger Device Query (POST /commands)",
+                "List Commands (GET /commands)",
+                "Get Command By Id",
+                "Cancel Command",
+                "List Schedules",
+                "Create Schedule"
+            ])
+            if "Trigger Device Query" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/device-query/v2/commands"
+                cmd_type = st.selectbox("Command Type", ["forensic", "artifact"])
+                scope = st.selectbox("Scope", ["all", "device_ids"])
+                q = st.text_area("Query", value="SELECT * FROM processes;")
+                t_data = {"command_type": cmd_type, "scope": scope, "query": q, "device_ids": ["dev-001"]}
+            elif "List Commands" in sub_op:
+                t_method = "GET"
+                t_endpoint = "/detect-respond/device-query/v2/commands"
+                t_data = {}
+            elif "Get Command By Id" in sub_op:
+                t_method = "GET"
+                cid = st.text_input("Command ID", value="cmd-123")
+                t_endpoint = f"/detect-respond/device-query/v2/commands/{cid}"
+                t_data = {}
+            elif "Cancel Command" in sub_op:
+                t_method = "PUT"
+                cid = st.text_input("Command ID", value="cmd-123")
+                t_endpoint = f"/detect-respond/device-query/v2/commands/{cid}/cancel"
+                t_data = {}
+            elif "List Schedules" in sub_op:
+                t_method = "GET"
+                t_endpoint = "/detect-respond/device-query/v2/schedules"
+                t_data = {}
+            elif "Create Schedule" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/device-query/v2/schedules"
+                t_data = {"name": "Daily Query", "query": "SELECT * FROM services;", "command_type": "forensic"}
+
+        elif "Alerts & Threats" in cat:
+            sub_op = st.selectbox("Operation", [
+                "Find Ungrouped Alerts (_search)",
+                "Get Alert By ID",
+                "Export Alerts (_export)",
+                "Find Grouped Alerts (_search)",
+                "Update Alerts Workflow"
+            ])
+            if "Find Ungrouped Alerts" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/alerts/v8/alerts/_search"
+                t_data = {"criteria": {}, "rows": 10, "start": 0}
+            elif "Get Alert By ID" in sub_op:
+                t_method = "GET"
+                aid = st.text_input("Alert ID", value="alt-123")
+                t_endpoint = f"/detect-respond/alerts/v8/alerts/{aid}"
+                t_data = {}
+            elif "Export Alerts" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/alerts/v8/alerts/_export"
+                t_data = {"criteria": {}}
+            elif "Find Grouped Alerts" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/alerts/v8/grouped_alerts/_search"
+                t_data = {"group_by": "threat_id", "rows": 10}
+            elif "Update Alerts Workflow" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/alerts/v8/alerts/workflow"
+                t_data = {"status": "RESOLVED", "determination": "TRUE_POSITIVE"}
+
+        elif "Jobs & Export" in cat:
+            sub_op = st.selectbox("Operation", [
+                "Start Event Export",
+                "Get Job Details",
+                "Download Job Output File"
+            ])
+            if "Start Event Export" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/jobs/v4/event_export"
+                t_data = {"query": "process_name: powershell.exe", "time_range": "1h"}
+            elif "Get Job Details" in sub_op:
+                t_method = "GET"
+                jid = st.text_input("Job ID", value="job-123")
+                t_endpoint = f"/detect-respond/jobs/v4/jobs/{jid}"
+                t_data = {}
+            elif "Download Job Output" in sub_op:
+                t_method = "GET"
+                jid = st.text_input("Job ID", value="job-123")
+                t_endpoint = f"/detect-respond/jobs/v4/jobs/{jid}/download"
+                t_data = {}
+
+        elif "Live Response" in cat:
+            sub_op = st.selectbox("Operation", [
+                "Get All Sessions",
+                "Create Session",
+                "Close Session",
+                "Queue Command"
+            ])
+            if "Get All Sessions" in sub_op:
+                t_method = "GET"
+                t_endpoint = "/detect-respond/live-response/v7/sessions"
+                t_data = {}
+            elif "Create Session" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/live-response/v7/sessions"
+                t_data = {"device_id": "device-001"}
+            elif "Close Session" in sub_op:
+                t_method = "DELETE"
+                sid = st.text_input("Session ID", value="sess-123")
+                t_endpoint = f"/detect-respond/live-response/v7/sessions/{sid}"
+                t_data = {}
+            elif "Queue Command" in sub_op:
+                t_method = "POST"
+                sid = st.text_input("Session ID", value="sess-123")
+                t_endpoint = f"/detect-respond/live-response/v7/sessions/{sid}/commands"
+                t_data = {"command": "processes"}
+
+        elif "Notifications" in cat:
+            sub_op = st.selectbox("Operation", ["Fetch Notification Rules", "Create Notification Rule", "Search History"])
+            if "Fetch Notification Rules" in sub_op:
+                t_method = "GET"
+                t_endpoint = "/detect-respond/notifications/v2/rules"
+                t_data = {}
+            elif "Create Notification Rule" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/notifications/v2/rules"
+                t_data = {"name": "High Severity Alert Rule", "enabled": True}
+            elif "Search History" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/detect-respond/notifications/v2/history/_search"
+                t_data = {}
+
+        elif "Policy Management" in cat:
+            sub_op = st.selectbox("Operation", ["List Policies", "Create Policy", "Export All Policies"])
+            if "List Policies" in sub_op:
+                t_method = "GET"
+                t_endpoint = "/common/policy-management/v2/policies"
+                t_data = {}
+            elif "Create Policy" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/common/policy-management/v2/policies"
+                t_data = {"name": "Firewall Policy 1", "type": "Firewall"}
+            elif "Export All Policies" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/common/policy-management/v2/policies/export/all"
+                t_data = {}
+
+        elif "Script Deobfuscation" in cat:
+            sub_op = st.selectbox("Operation", ["Deobfuscate Script"])
+            t_method = "POST"
+            t_endpoint = "/detect-respond/script-deobfuscation/v3/reveal"
+            t_data = {"script": "powershell.exe -e aQBm..."}
+
+        elif "Threat Intel" in cat:
+            sub_op = st.selectbox("Operation", ["TAXII Discovery", "List Collections", "TAXII Poll"])
+            if "TAXII Discovery" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/common/threat-intel/v1/taxii11/discovery"
+                t_data = {}
+            elif "List Collections" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/common/threat-intel/v1/taxii11/collection-management"
+                t_data = {}
+            elif "TAXII Poll" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/common/threat-intel/v1/taxii11/poll"
+                t_data = {"collection_name": "threat-alerts"}
+
+        elif "Vulnerability Assessment" in cat:
+            sub_op = st.selectbox("Operation", [
+                "Get Org Vulnerability Summary",
+                "Search Vulnerable Devices",
+                "Search Organization Vulnerabilities",
+                "Get Vulnerability Details"
+            ])
+            if "Get Org Vulnerability Summary" in sub_op:
+                t_method = "GET"
+                t_endpoint = "/endpoint-security/vulnerability/assessment/v3/vulnerabilities/summary"
+                t_data = {}
+            elif "Search Vulnerable Devices" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/summary/_search"
+                t_data = {"rows": 10, "start": 0}
+            elif "Search Organization Vulnerabilities" in sub_op:
+                t_method = "POST"
+                t_endpoint = "/endpoint-security/vulnerability/assessment/v3/devices/vulnerabilities/_search"
+                t_data = {"rows": 10, "start": 0}
+            elif "Get Vulnerability Details" in sub_op:
+                t_method = "GET"
+                cve = st.text_input("CVE ID", value="CVE-2023-1234")
+                t_endpoint = f"/endpoint-security/vulnerability/assessment/v3/vulnerabilities/{cve}"
+                t_data = {}
+
+        # Automatically inject customer_id and domain_id if available & POST/PUT/PATCH
         if t_method in ["POST", "PUT", "PATCH"] and isinstance(t_data, dict):
-            if c_id: t_data["customer_id"] = c_id
-            if d_id: t_data["domain_id"] = d_id
+            if c_id and "customer_id" not in t_data: t_data["customer_id"] = c_id
+            if d_id and "domain_id" not in t_data: t_data["domain_id"] = d_id
 
     with col_in2:
         st.markdown("**生成されるプレビュー (Rawデータ / URL):**")
-        st.code(f"Endpoint: {t_endpoint}
-Method: {t_method}
-Data:
-{json.dumps(t_data, indent=2)}", language="json")
+        preview_text = f"Endpoint: {t_endpoint}\nMethod: {t_method}\nData:\n{json.dumps(t_data, indent=2)}"
+        st.code(preview_text, language="json")
         
         if st.button("📥 このコマンドとデータを下の実行ボックスに移す", use_container_width=True, type="primary"):
             st.session_state["exec_method"] = t_method
@@ -169,14 +370,17 @@ st.markdown("---")
 
 # --- ALWAYS VISIBLE EXECUTION BOX (SIDE-BY-SIDE LAYOUT) ---
 st.markdown("## 🚀 共通実行ボックス (Execution Box)")
-st.markdown("どのカテゴリを選択しても、常にここにURLやリクエストデータが保持され、横並びで自由に編集・実行できます。")
+st.markdown("どのカテゴリ・どのメソッドを選択しても、ここにURLやリクエストデータが保持され、横並びで自由に編集・実行できます。")
 
 with st.container():
     st.markdown('<div class="box-container">', unsafe_allow_html=True)
     
     ex_col1, ex_col2 = st.columns([1, 3])
     with ex_col1:
-        method = st.selectbox("Method", ["GET", "POST", "PUT", "DELETE", "PATCH"], index=["GET", "POST", "PUT", "DELETE", "PATCH"].index(st.session_state["exec_method"]))
+        methods_list = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+        curr_m = st.session_state["exec_method"]
+        m_index = methods_list.index(curr_m) if curr_m in methods_list else 0
+        method = st.selectbox("Method", methods_list, index=m_index)
     with ex_col2:
         endpoint = st.text_input("Endpoint Path / URL", value=st.session_state["exec_endpoint"])
 
@@ -241,8 +445,7 @@ with st.container():
                         curl_gen.append(f"  --header '{hk}: {hv}'")
                     if payload_to_send:
                         curl_gen.append(f"  --data '{json.dumps(payload_to_send)}'")
-                    st.code(" \
-".join(curl_gen), language="bash")
+                    st.code(" \\\n".join(curl_gen), language="bash")
 
             except Exception as ex:
                 st.error(f"リクエスト送信失敗: {str(ex)}")
